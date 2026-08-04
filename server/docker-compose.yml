@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: ai-learning-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ai-learning
+    ports:
+      - 5432:5432
+    volumes:
+      - ai-learning-db:/var/lib/postgresql/data
+    # networks:
+    #   - app-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine # alpine版本更小
+    container_name: ai-learning-redis
+    ports:
+      - 6379:6379
+    volumes:
+      - redis_data:/data
+    # networks:
+    #   - app-network
+    restart: unless-stopped
+
+# 网络
+# networks:
+#   app-network:
+#     driver: bridge
+
+volumes:
+  ai-learning-db: # PostgreSQL数据卷
+  redis_data:  # redis数据卷
