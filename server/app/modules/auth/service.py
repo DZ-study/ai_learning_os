@@ -3,11 +3,15 @@ import secrets
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security.jwt import create_access_token, create_refresh_token
+from app.core.security.jwt import create_access_token, create_refresh_token, decode_token
 from app.infrastructure.email.service import EmailService
 from app.infrastructure.redis.service import RedisService
 from app.modules.user.repository import UserRepository
-from app.shared.exceptions import BadRequestException, TooManyRequestsException
+from app.shared.exceptions import (
+    BadRequestException,
+    TooManyRequestsException,
+    UnauthorizedException,
+)
 
 from .repository import AuthRepository
 
@@ -80,3 +84,25 @@ class AuthService:
         await self.email_service.send_email(email, "验证码", f"您的验证码是 {code}")
 
         return {"email": email}
+
+    async def refresh(self, refresh_token: str) -> dict:
+        """用 refresh_token 换取新的 token 对。"""
+
+        payload = decode_token(refresh_token)
+
+        if not payload or payload.get("type") != "refresh":
+            raise UnauthorizedException("刷新令牌无效或已过期")
+
+        user_id = payload.get("sub")
+        if not user_id:
+            raise UnauthorizedException("无效的令牌载荷")
+
+        user = await self.user_repository.get_by_id(int(user_id))
+        if not user:
+            raise UnauthorizedException("用户不存在")
+
+        return {
+            "access_token": create_access_token(user.id),
+            "refresh_token": create_refresh_token(user.id),
+            "token_type": "bearer",
+        }

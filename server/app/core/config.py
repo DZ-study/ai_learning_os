@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     SMTP_USER: str = "1213198891@qq.com"
     SMTP_PASSWORD: str = ""
 
-    COOLDOWN_TIME: int = 240  # 4 minutes 冷却时间
-    MAX_SEND_COUNT = 10  # 每日最大发送次数
+    COOLDOWN_TIME: int = 240  # 冷却时间(秒)
+    MAX_SEND_COUNT: int = 10  # 每日最大发送次数
 
     model_config = {
         "env_file": ".env",

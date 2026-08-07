@@ -6,7 +6,7 @@ from app.modules.user.service import UserService
 from app.shared.schemas import ApiResponse
 
 router = APIRouter(
-    prefix="/users", tags=["users"], dependencies=Depends(get_current_user_id)
+    prefix="/users", tags=["users"], dependencies=[Depends(get_current_user_id)]
 )
 
 

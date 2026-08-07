@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,7 +22,7 @@ async def get_current_user_id(token: str = Depends(oauth2_scheme)):
     payload = decode_token(token)
 
     if not payload or payload.get("type") != "access":
-        raise HTTPException(status_code=401, detail="认证已过期，请重新登录")
+        raise UnauthorizedException("认证已过期，请重新登录")
 
     user_id = payload.get("sub")
 

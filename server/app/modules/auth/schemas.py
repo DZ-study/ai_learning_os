@@ -26,6 +26,14 @@ class LoginRequest(BaseModel):
     code: str
 
 
+class RefreshRequest(BaseModel):
+    """
+    刷新 token
+    """
+
+    refresh_token: str
+
+
 class TokenResponse(BaseModel):
     """
     登陆成功返回token
