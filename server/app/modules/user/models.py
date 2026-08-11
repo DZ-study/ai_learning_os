@@ -1,5 +1,5 @@
 from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database.base import Base, TimestampMixin
 
@@ -28,3 +28,7 @@ class User(TimestampMixin, Base):
     )
 
     status: Mapped[str] = mapped_column(String(20), default="active")
+
+    learning_goals = relationship(
+        "Goals", back_populates="user", cascade="all, delete-orphan"
+    )

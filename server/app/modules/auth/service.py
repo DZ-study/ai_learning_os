@@ -3,7 +3,11 @@ import secrets
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security.jwt import create_access_token, create_refresh_token, decode_token
+from app.core.security.jwt import (
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+)
 from app.infrastructure.email.service import EmailService
 from app.infrastructure.redis.service import RedisService
 from app.modules.user.repository import UserRepository
