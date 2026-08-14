@@ -10,6 +10,8 @@ from app.infrastructure.redis.client import redis_client
 from app.infrastructure.redis.service import RedisService
 from app.modules.auth.repository import AuthRepository
 from app.modules.auth.service import AuthService
+from app.modules.goals.repository import GoalRepository
+from app.modules.goals.service import GoalService
 from app.modules.user.models import User
 from app.modules.user.repository import UserRepository
 from app.modules.user.service import UserService
@@ -83,3 +85,11 @@ def get_llm_service(
 ) -> LLMService:
     """组装 LLMService，注入 LLMClient。"""
     return LLMService(llm)
+
+
+async def get_goal_service(
+    session: AsyncSession = Depends(get_db),
+    llm_service: LLMService = Depends(get_llm_service),
+) -> GoalService:
+    goal_repository = GoalRepository(session=session)
+    return GoalService(repository=goal_repository, ai_service=llm_service)

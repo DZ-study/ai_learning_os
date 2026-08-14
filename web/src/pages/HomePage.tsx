@@ -7,5 +7,5 @@ export default function HomePage() {
         Welcome to your personal learning management system.
       </p>
     </div>
-  );
+  )
 }

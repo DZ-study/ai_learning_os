@@ -1,15 +1,15 @@
-import { lazy } from "react";
-import { createBrowserRouter } from "react-router-dom";
-import App from "./App";
-const AuthGuard = lazy(() => import("@/components/auth/AuthGuard"));
-const Layout = lazy(() => import("@/components/layout/Layout"));
-const HomePage = lazy(() => import("./pages/HomePage"));
-const GoalPage = lazy(() => import("./pages/GoalPage"));
-const AgentPage = lazy(() => import("./pages/AgentPage"));
-const AITutorPage = lazy(() => import("./pages/AITutorPage"));
+import { lazy } from "react"
+import { createBrowserRouter } from "react-router-dom"
+import App from "./App"
+const AuthGuard = lazy(() => import("@/components/auth/AuthGuard"))
+const Layout = lazy(() => import("@/components/layout/Layout"))
+const HomePage = lazy(() => import("./pages/HomePage"))
+const GoalPage = lazy(() => import("./pages/goal/GoalPage"))
+const AgentPage = lazy(() => import("./pages/AgentPage"))
+const AITutorPage = lazy(() => import("./pages/AITutorPage"))
 const KnowledgePage = lazy(() => import("./pages/KnowledgePage"))
 
-const LoginPage = lazy(() => import("./pages/LoginPage"));
+const LoginPage = lazy(() => import("./pages/LoginPage"))
 
 export const router = createBrowserRouter([
   {
@@ -39,4 +39,4 @@ export const router = createBrowserRouter([
       },
     ],
   },
-]);
+])

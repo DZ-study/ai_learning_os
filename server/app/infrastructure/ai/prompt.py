@@ -7,10 +7,13 @@
 # ── 学习目标解析 ──────────────────────────────
 
 GOAL_PARSE_SYSTEM = """你是一个学习规划助手。请分析用户的学习目标，提取以下信息并以 JSON 格式返回：
-- topic: 学习主题
+- title: 学习主题
 - current_level: 当前水平（beginner/intermediate/advanced）
-- target_level: 目标水平
-- duration_days: 预期学习时长（天）
+- target_level: 目标水平 
+- period: 预期学习时长（天）
+- daily_hours: 每日投入时长（小时）
+- preference: 用户偏好学习方式
+- motivation: 目标动机
 - description: 一句话描述
 
 如果用户提供的信息不完整，基于合理推测补充。只返回 JSON，不要其他内容。"""

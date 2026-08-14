@@ -29,6 +29,4 @@ class User(TimestampMixin, Base):
 
     status: Mapped[str] = mapped_column(String(20), default="active")
 
-    learning_goals = relationship(
-        "Goals", back_populates="user", cascade="all, delete-orphan"
-    )
+    goals = relationship("Goals", back_populates="user", cascade="all, delete-orphan")

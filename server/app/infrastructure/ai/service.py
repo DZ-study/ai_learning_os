@@ -4,6 +4,8 @@
 依赖 LLMClient 而非具体 Provider，确保模型可替换。
 """
 
+from typing import AsyncIterator
+
 from app.infrastructure.ai.client import LLMClient
 from app.infrastructure.ai.schemas import LLMRequest, LLMResponse, Message
 
@@ -32,7 +34,38 @@ class LLMService:
         if system_prompt:
             messages.append(Message(role="system", content=system_prompt))
         messages.append(Message(role="user", content=user_message))
-        return await self._llm.generate(LLMRequest(messages=messages, temperature=temperature))
+        return await self._llm.generate(
+            LLMRequest(messages=messages, temperature=temperature)
+        )
+
+    # —— 流式调用 ———————————————————————————————
+    async def chat_stream(
+        self,
+        user_message: str,
+        *,
+        system_prompt: str | None = None,
+        temperature: float | None = None,
+    ) -> AsyncIterator[str]:
+        messages: list[Message] = []
+
+        if system_prompt:
+            messages.append(
+                Message(
+                    role="system",
+                    content=system_prompt,
+                )
+            )
+
+        messages.append(
+            Message(
+                role="user",
+                content=user_message,
+            )
+        )
+        async for chunk in self._llm.generate_stream(
+            LLMRequest(temperature=temperature, messages=messages)
+        ):
+            yield chunk
 
     # ── 学习目标解析 ────────────────────────────
 

@@ -1,0 +1,41 @@
+{
+  "menu": {
+    "dashboard": "Dashboard",
+    "goals": "Learning Goals",
+    "agent": "Agent Planning",
+    "tutor": "AI Tutor",
+    "knowledge": "Knowledge Graph"
+  },
+  "header": {
+    "switch_lang": "Switch Language",
+    "switch_theme": "Switch Theme",
+    "profile": "Profile"
+  },
+  "auth": {
+    "title_email": "Login to AI Learning OS",
+    "title_code": "Enter Verification Code",
+    "subtitle_email": "Enter your email and we'll send you a verification code",
+    "subtitle_code": "We sent a 6-digit code to {{email}}",
+    "label_email": "Email Address",
+    "label_code": "Verification Code",
+    "placeholder_email": "hello@example.com",
+    "placeholder_code": "000000",
+    "back": "Change email",
+    "continue": "Continue",
+    "login": "Login",
+    "resend": "Resend code",
+    "countdown": "Resend in {{seconds}}s"
+  },
+  "validation": {
+    "email_required": "Email is required",
+    "email_invalid": "Please enter a valid email",
+    "code_required": "Verification code is required",
+    "code_length": "Code must be 6 digits",
+    "code_format": "Code must be 6 digits"
+  },
+  "error": {
+    "send_failed": "Failed to send code, please try again",
+    "login_failed": "Login failed, please try again",
+    "network": "Network error, please check your connection"
+  }
+}

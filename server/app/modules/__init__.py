@@ -1,3 +1,3 @@
+from .auth.models import AuthAccount, VerificationCode
+from .goals.models import Goals
 from .user.models import User
-from .auth.models import AuthAccount
-from .auth.models import VerificationCode

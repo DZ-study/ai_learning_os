@@ -1,14 +1,14 @@
-import Logo from "@/assets/svg/logo.svg?react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useLogin } from "@/hooks/useLogin";
-import { ArrowLeft, Loader2 } from "lucide-react";
-import { useEffect, useRef } from 'react';
-import { useTranslation } from "react-i18next";
+import Logo from "@/assets/svg/logo.svg?react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useLogin } from "@/hooks/useLogin"
+import { ArrowLeft, Loader2 } from "lucide-react"
+import { useEffect, useRef } from "react"
+import { useTranslation } from "react-i18next"
 
 export default function LoginPage() {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
   const {
     step,
     loading,
@@ -19,20 +19,20 @@ export default function LoginPage() {
     getValues,
     handleSendCode,
     handleBack,
-    handleSubmit
-  } = useLogin();
+    handleSubmit,
+  } = useLogin()
 
-  const emailReg = register("email");
-  const codeReg = register("code");
+  const emailReg = register("email")
+  const codeReg = register("code")
 
-  const emailInputRef = useRef<HTMLInputElement | null>(null);
-  const codeInputRef = useRef<HTMLInputElement | null>(null);
+  const emailInputRef = useRef<HTMLInputElement | null>(null)
+  const codeInputRef = useRef<HTMLInputElement | null>(null)
 
   // 聚焦输入框
   useEffect(() => {
-    if (step === "email") emailInputRef.current?.focus();
-    if (step === "code") codeInputRef.current?.focus();
-  }, [step]);
+    if (step === "email") emailInputRef.current?.focus()
+    if (step === "code") codeInputRef.current?.focus()
+  }, [step])
 
   return (
     <div className="flex min-h-screen justify-center bg-background px-4 pt-[12vh]">
@@ -57,9 +57,7 @@ export default function LoginPage() {
           {/* 邮箱输入 */}
           {step === "email" && (
             <div className="space-y-1.5">
-              <Label htmlFor="email">
-                {t("auth.label_email")}
-              </Label>
+              <Label htmlFor="email">{t("auth.label_email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -67,8 +65,8 @@ export default function LoginPage() {
                 onBlur={emailReg.onBlur}
                 onChange={emailReg.onChange}
                 ref={(node) => {
-                  emailReg.ref(node);
-                  emailInputRef.current = node;
+                  emailReg.ref(node)
+                  emailInputRef.current = node
                 }}
                 placeholder={t("auth.placeholder_email")}
                 autoComplete="email"
@@ -96,9 +94,7 @@ export default function LoginPage() {
                 {t("auth.back")}
               </Button>
 
-              <Label htmlFor="code">
-                {t("auth.label_code")}
-              </Label>
+              <Label htmlFor="code">{t("auth.label_code")}</Label>
               <Input
                 id="code"
                 type="text"
@@ -107,15 +103,13 @@ export default function LoginPage() {
                 name={codeReg.name}
                 onBlur={codeReg.onBlur}
                 ref={(node) => {
-                  codeReg.ref(node);
-                  codeInputRef.current = node;
+                  codeReg.ref(node)
+                  codeInputRef.current = node
                 }}
                 onChange={(e) => {
-                  const filtered = e.target.value
-                    .replace(/\D/g, "")
-                    .slice(0, 6);
-                  e.target.value = filtered;
-                  codeReg.onChange(e);
+                  const filtered = e.target.value.replace(/\D/g, "").slice(0, 6)
+                  e.target.value = filtered
+                  codeReg.onChange(e)
                 }}
                 placeholder={t("auth.placeholder_code")}
                 autoComplete="one-time-code"
@@ -164,5 +158,5 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
-  );
+  )
 }

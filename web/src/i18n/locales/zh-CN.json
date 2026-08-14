@@ -1,0 +1,41 @@
+{
+  "menu": {
+    "dashboard": "仪表盘",
+    "goals": "学习目标",
+    "agent": "Agent 规划",
+    "tutor": "AI Tutor",
+    "knowledge": "知识网络"
+  },
+  "header": {
+    "switch_lang": "切换语言",
+    "switch_theme": "切换主题",
+    "profile": "个人信息"
+  },
+  "auth": {
+    "title_email": "登录 AI Learning OS",
+    "title_code": "输入验证码",
+    "subtitle_email": "输入邮箱地址，我们将发送验证码给您",
+    "subtitle_code": "我们向 {{email}} 发送了 6 位验证码",
+    "label_email": "邮箱地址",
+    "label_code": "验证码",
+    "placeholder_email": "hello@example.com",
+    "placeholder_code": "000000",
+    "back": "更换邮箱",
+    "continue": "继续",
+    "login": "登录",
+    "resend": "重新发送验证码",
+    "countdown": "{{seconds}}s 后可重新发送"
+  },
+  "validation": {
+    "email_required": "请输入邮箱地址",
+    "email_invalid": "请输入有效的邮箱地址",
+    "code_required": "请输入验证码",
+    "code_length": "请输入 6 位验证码",
+    "code_format": "验证码为 6 位数字"
+  },
+  "error": {
+    "send_failed": "发送失败，请稍后再试",
+    "login_failed": "登录失败，请稍后再试",
+    "network": "网络错误，请检查网络后重试"
+  }
+}
