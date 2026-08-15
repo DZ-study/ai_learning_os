@@ -36,5 +36,7 @@ export interface Goal {
   description: string | null
   level: string | null
   start_date: string | null
-  end_date: string | null
+  end_date?: string | null
+  target_level: string | null
+  period: string | null
 }

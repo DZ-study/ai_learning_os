@@ -19,6 +19,9 @@ export default function AuthGuard() {
     )
   }
 
+  console.log("路由守卫：", isLoading)
+
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
   }

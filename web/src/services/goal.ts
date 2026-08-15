@@ -2,6 +2,7 @@
  * 学习目标
  */
 
+import type { GoalFormValues } from '@/types/goal'
 import req from './request'
 
 export const parseGoalByAI = (content: string) => {
@@ -11,4 +12,9 @@ export const parseGoalByAI = (content: string) => {
 /**获取目标列表 */
 export const getGoals = () => {
   return req.get('/goals/list')
+}
+
+/**创建目标 */
+export const createGoal = (data: GoalFormValues) => {
+  return req.post('/goals/create', data)
 }

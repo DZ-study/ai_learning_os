@@ -35,6 +35,7 @@ export default function GoalAIAnalysis({
       try {
         onGenerated(JSON.parse(data.data))
       } catch (error) {
+        onGenerated({})
         console.error(error)
       }
 
@@ -50,9 +51,9 @@ export default function GoalAIAnalysis({
   return (<>
     <Textarea
       value={input}
-      placeholder="例如：我想在三个月内学会 React..."
+      placeholder="例如：我想在三个月内从零基础学会React，可以独立开发一个网站..."
       onChange={(e) => setInput(e.target.value)}
-      className="border-(--border)"
+      className="border-(--border) h-24"
     />
     {/** AI 分析异常 */}
     {isError && <div className="text-red-500">{error.message}</div>}
