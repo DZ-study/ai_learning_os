@@ -16,66 +16,7 @@ import {
   InputGroupTextarea,
 } from "@/components/ui/input-group"
 import { goalFormSchema, type GoalFormValues } from '@/types/goal'
-import React, { useEffect } from 'react'
-
-/********************测试数据 Start****************************/
-const AnalysisData: any = {
-  "title": "三个月从零基础学习 React 并达到独立开发门户网站水平",
-  "description": "用户希望用三个月时间，从零基础开始学习 React，目标是达到能够独立开发门户网站的水平。",
-  "targetDate": "",
-  "availableTime": "",
-  "priority": "",
-  "preferences": "",
-  "constraints": "",
-  "summary": "用户计划在三个月内从零基础学习 React，最终能够独立开发门户网站。",
-  "goalType": "learning",
-  "successCriteria": [
-    "独立完成至少一个门户网站项目",
-    "掌握 React 核心概念并能够解释项目中的组件划分、状态管理和数据交互",
-    "通过项目展示自己具备独立开发门户网站的能力"
-  ],
-  "currentState": "React 零基础",
-  "challenges": [
-    "三个月时间有限，从零基础到独立开发需要合理规划学习路径",
-    "门户网站开发可能涉及 HTML/CSS/JavaScript、React、路由、状态管理等多项技能",
-    "用户每天可投入时间尚不明确，影响学习节奏的可行性评估"
-  ],
-  "suggestedQuestions": [
-    "你目前是否已有 HTML、CSS、JavaScript 等前端基础？",
-    "你计划每天或每周投入多少时间学习？",
-    "你希望开发的门户网站大概包含哪些功能？例如：新闻展示、用户登录、后台管理、响应式适配等",
-    "你偏好通过阅读文档、视频教程、项目实战还是混合方式学习？",
-    "你是否有参考门户网站或设计风格？"
-  ],
-  "facts": [
-    {
-      "content": "用户计划用三个月时间完成 React 学习",
-      "category": "schedule",
-      "source": "user",
-      "confidence": 1
-    },
-    {
-      "content": "用户从零基础开始学习 React",
-      "category": "experience",
-      "source": "user",
-      "confidence": 1
-    },
-    {
-      "content": "用户希望达到独立开发门户网站的水平",
-      "category": "other",
-      "source": "user",
-      "confidence": 1
-    },
-    {
-      "content": "用户可能没有前端基础（HTML/CSS/JavaScript）",
-      "category": "experience",
-      "source": "ai_inference",
-      "confidence": 0.5
-    }
-  ],
-  "extra": {}
-}
-/********************测试数据 End****************************/
+import React from 'react'
 
 export type GoalFormRef = {
   submit: () => void
@@ -84,7 +25,6 @@ export type GoalFormRef = {
 
 type GoalFormProps = {
   onSubmit: (values: GoalFormValues) => Promise<void> | void
-  formData: GoalFormValues
 }
 
 const priorityOptions = [
@@ -94,18 +34,23 @@ const priorityOptions = [
 ] as const
 
 const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
-  ({ onSubmit, formData }, ref) => {
+  ({ onSubmit }, ref) => {
     const form = useForm<GoalFormValues>({
       resolver: zodResolver(goalFormSchema),
-      defaultValues: formData,
+      defaultValues: {
+        title: "",
+        duration: 90,
+        availableTime: "",
+        priority: "low",
+        description: "",
+        preferences: "",
+        constraints: "",
+      },
     })
-
-    useEffect(() => {
-      form.reset(formData)
-    }, [formData])
 
     React.useImperativeHandle(ref, () => ({
       submit: () => {
+        console.log("submit", form.getValues())
         // 会先执行 Zod 校验；失败时自动显示 FieldError
         void form.handleSubmit(onSubmit)()
       },
@@ -139,19 +84,28 @@ const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
             />
             <Controller
               control={form.control}
-              name="targetDate"
+              name="duration"
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="goal-target-date">期望完成日期</FieldLabel>
+                  <FieldLabel htmlFor="goal-duration">
+                    期望完成时长
+                  </FieldLabel>
                   <Input
                     {...field}
-                    id="goal-target-date"
-                    type="date"
+                    id="goal-duration"
+                    type="number"
+                    min={1}
+                    placeholder="例如：3"
                     aria-invalid={fieldState.invalid}
+                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
                   />
+
                   {fieldState.error && (
                     <FieldError errors={[fieldState.error]} />
                   )}
+                  <FieldDescription>
+                    以天为单位
+                  </FieldDescription>
                 </Field>
               )}
             />
@@ -161,7 +115,7 @@ const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor="goal-available-time">
-                    可投入时间
+                    每日可投入时间(h)
                   </FieldLabel>
                   <Input
                     {...field}
@@ -197,7 +151,7 @@ const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
                     <option value="">暂不设置</option>
                     {priorityOptions.map((option) => (
                       <option key={option.value} value={option.value}>
-                        {option.label}优先级
+                        {option.label}
                       </option>
                     ))}
                   </select>
@@ -219,7 +173,6 @@ const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
                 <FieldLabel htmlFor="goal-description">
                   详细描述 <span className="text-destructive">*</span>
                 </FieldLabel>
-
                 <InputGroup>
                   <InputGroupTextarea
                     {...field}
@@ -234,11 +187,9 @@ const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
                     </InputGroupText>
                   </InputGroupAddon>
                 </InputGroup>
-
                 <FieldDescription>
                   保留你的原始表达，AI 会据此理解并生成计划。
                 </FieldDescription>
-
                 {fieldState.error && (
                   <FieldError errors={[fieldState.error]} />
                 )}
@@ -252,7 +203,6 @@ const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor="goal-preferences">偏好</FieldLabel>
-
                 <InputGroup>
                   <InputGroupTextarea
                     {...field}
@@ -262,7 +212,6 @@ const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
                     aria-invalid={fieldState.invalid}
                   />
                 </InputGroup>
-
                 {fieldState.error && (
                   <FieldError errors={[fieldState.error]} />
                 )}
@@ -276,7 +225,6 @@ const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor="goal-constraints">限制条件</FieldLabel>
-
                 <InputGroup>
                   <InputGroupTextarea
                     {...field}
@@ -286,26 +234,12 @@ const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
                     aria-invalid={fieldState.invalid}
                   />
                 </InputGroup>
-
                 {fieldState.error && (
                   <FieldError errors={[fieldState.error]} />
                 )}
               </Field>
             )}
           />
-
-          {/* <div className="flex justify-end gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => form.reset()}
-                >
-                  重置
-                </Button>
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? "创建中…" : "创建目标"}
-                </Button>
-              </div> */}
         </FieldGroup>
       </form>
     )

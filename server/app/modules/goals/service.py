@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.ai.service import LLMService
 from app.modules.goals.repository import GoalRepository
@@ -8,7 +9,10 @@ from app.modules.goals.schemas import (
 
 
 class GoalService:
-    def __init__(self, repository: GoalRepository, ai_service: LLMService):
+    def __init__(
+        self, session: AsyncSession, repository: GoalRepository, ai_service: LLMService
+    ):
+        self.session = session
         self._repository = repository
         self.ai_service = ai_service
 
@@ -16,6 +20,7 @@ class GoalService:
         goal_data = data.model_dump()
         goal_data["user_id"] = user_id
         goal = await self._repository.create(goal_data)
+        await self.session.commit()
         return goal
 
     async def get_goals(self, user_id: int):

@@ -1,86 +1,84 @@
 from datetime import date, datetime
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class GoalBase(BaseModel):
-    """
-    公共字段
-    """
+    """Fields shared by goal creation and updates."""
 
-    title: str = Field(min_length=1, max_length=100, description="目标名称")
+    model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
-    description: str | None = Field(default=None, description="目标描述")
-
-    level: str | None = Field(default=None, max_length=20, description="难度等级")
-
-    start_date: date | None = Field(default=None, description="开始日期")
-
-    end_date: date | None = Field(default=None, description="结束日期")
+    title: str = Field(min_length=2, max_length=255, description="目标标题")
+    description: str = Field(min_length=10, description="目标详细描述")
+    duration: int = Field(
+        validation_alias="duration",
+        serialization_alias="duration",
+        description="期望完成时长(天)",
+    )
+    available_time: str | None = Field(
+        default=None,
+        max_length=255,
+        validation_alias="availableTime",
+        serialization_alias="availableTime",
+        description="每日可投入时间(h)",
+    )
+    priority: Literal["low", "medium", "high"] | None = Field(
+        default=None,
+        description="优先级",
+    )
+    preferences: str | None = Field(default=None, description="用户偏好")
+    constraints: str | None = Field(default=None, description="限制条件")
 
 
 class GoalCreate(GoalBase):
-    """
-    创建目标请求
-    """
-
-    pass
+    """Create-goal request, matching web/src/types/goal.ts."""
 
 
 class GoalUpdate(BaseModel):
-    """
-    更新目标请求
+    """All editable goal fields are optional when updating a goal."""
 
-    全部字段可选
-    """
+    model_config = ConfigDict(populate_by_name=True, str_strip_whitespace=True)
 
-    title: str | None = Field(default=None, min_length=1, max_length=100)
-
-    description: str | None = None
-
-    category: str | None = None
-
-    level: str | None = None
-
-    start_date: date | None = None
-
-    end_date: date | None = None
-
-    status: str | None = None
+    title: str | None = Field(default=None, min_length=2, max_length=255)
+    description: str | None = Field(default=None, min_length=10)
+    duration: int = Field(
+        validation_alias="duration",
+        serialization_alias="duration",
+    )
+    available_time: str | None = Field(
+        default=None,
+        max_length=255,
+        validation_alias="availableTime",
+        serialization_alias="availableTime",
+    )
+    priority: Literal["low", "medium", "high"] | None = None
+    preferences: str | None = None
+    constraints: str | None = None
+    status: Literal["draft", "active", "paused", "completed", "archived"] | None = None
 
 
 class GoalResponse(BaseModel):
-    """
-    返回给前端的数据
-    """
+    """Goal data returned to the web client."""
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: int
-
     user_id: int
-
     title: str
-
     description: str | None
-
-    category: str | None
-
-    level: str | None
-
-    start_date: date | None
-
-    end_date: date | None
-
-    status: str
-
-    created_at: datetime
-
-    updated_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
+    duration: int = Field(serialization_alias="duration")
+    available_time: str | None = Field(serialization_alias="availableTime")
+    priority: Literal["low", "medium", "high"] | None
+    preferences: str | None
+    constraints: str | None
+    status: Literal["draft", "active", "paused", "completed", "archived"]
+    created_at: datetime = Field(serialization_alias="createdAt")
+    updated_at: datetime = Field(serialization_alias="updatedAt")
 
 
 class GoalParseRequest(BaseModel):
-    messages: str
+    messages: str = Field(min_length=1)
 
 
 class GoalParseResponse(BaseModel):

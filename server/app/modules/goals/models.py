@@ -1,6 +1,8 @@
 from datetime import date
+from typing import Any, Optional
 
-from sqlalchemy import JSON, Date, Float, ForeignKey, String, Text
+from sqlalchemy import Date, Enum, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database.base import Base, TimestampMixin
@@ -16,37 +18,45 @@ class Goals(TimestampMixin, Base):
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False, comment="用户ID"
     )
 
+    # 用户必填
     title: Mapped[str] = mapped_column(String(255), nullable=False, comment="目标标题")
-    description: Mapped[str] = mapped_column(Text, nullable=True, comment="目标描述")
-
-    # 目标周期：1周/2周/1个月/2个月/3个月/6个月/1年/2年/3年
-    period: Mapped[str] = mapped_column(String(20), nullable=False, comment="目标周期")
-
-    # 每天投入小时数：0.5/1/1.5/2/3/4/5
-    daily_hours: Mapped[float] = mapped_column(
-        Float, nullable=False, comment="每天投入小时数"
+    description: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True, comment="目标描述"
     )
+    duration: Mapped[int] = mapped_column(nullable=True)
 
-    # 当前水平：零基础/入门/进阶/高手
-    level: Mapped[str] = mapped_column(String(20), nullable=False, comment="当前水平")
-
-    # 偏好学习方式（多选）：视频/阅读/动手实践/刷题/案例驱动
-    preference: Mapped[list[str] | None] = mapped_column(
-        JSON, nullable=True, comment="偏好学习方式"
+    # 用户可选、可修改
+    available_time: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    priority: Mapped[Optional[str]] = mapped_column(
+        Enum("low", "medium", "high", name="goal_priority"),
+        nullable=True,
+        index=True,
+        comment="优先级",
     )
+    preferences: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    constraints: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    # 学习动机：找工作/升职加薪/转行/兴趣/考试考证
-    motivation: Mapped[str | None] = mapped_column(
-        String(20), nullable=True, comment="学习动机"
+    # rawInput: Mapped[Optional[str]] = mapped_column(
+    #     Text, nullable=True, comment="原始输入"
+    # )
+
+    # # AI灵活上下文
+    # ai_context: Mapped[Optional[dict[str, Any]]] = mapped_column(
+    #     JSONB, nullable=True, comment="ai上下文"
+    # )
+
+    status: Mapped[str] = mapped_column(
+        Enum(
+            "draft",  # 未开始
+            "active",  # 进行中
+            "paused",  # 暂停
+            "completed",  # 完成
+            "archived",  # 归档
+            name="goal_status",
+        ),
+        nullable=False,
+        default="draft",
+        index=True,
     )
-
-    # 开始日期
-    start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-
-    # 结束日期
-    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-
-    # active / completed / paused
-    status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
 
     user = relationship("User", back_populates="goals")

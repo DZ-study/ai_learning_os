@@ -92,4 +92,4 @@ async def get_goal_service(
     llm_service: LLMService = Depends(get_llm_service),
 ) -> GoalService:
     goal_repository = GoalRepository(session=session)
-    return GoalService(repository=goal_repository, ai_service=llm_service)
+    return GoalService(session, repository=goal_repository, ai_service=llm_service)

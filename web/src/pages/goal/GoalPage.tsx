@@ -3,9 +3,11 @@ import { Button } from '@/components/ui/button'
 
 import AddGoalDrawer from "@/pages/goal/AddGoalDrawer"
 import { getGoals } from '@/services/goal'
-import { useEffect, useState } from "react"
+import { useQuery } from '@tanstack/react-query'
+import { useState } from "react"
 import GoalCard from './GoalCard'
 import GoalTable from './GoalTable'
+import { goalKeys } from './queryKeys'
 import type { ViewMode } from './ViewSwitcher'
 import { ViewSwitcher } from './ViewSwitcher'
 
@@ -13,9 +15,10 @@ export default function GoalPage() {
   const [showAddGoal, setShowAddGoal] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>("list")
 
-  useEffect(() => {
-    getGoals().then(res => console.log(res))
-  }, [])
+  const { data: goals } = useQuery({
+    queryKey: goalKeys.list(),
+    queryFn: getGoals
+  })
 
   const handleOpen = () => {
     setShowAddGoal(true)
@@ -34,8 +37,8 @@ export default function GoalPage() {
         />
         <Button onClick={handleOpen}>添加学习目标</Button>
       </div>
-      {viewMode === "list" && <GoalTable />}
-      {viewMode === "card" && <GoalCard />}
+      {viewMode === "list" && <GoalTable data={goals ?? []} />}
+      {viewMode === "card" && <GoalCard data={goals ?? []} />}
       <AddGoalDrawer open={showAddGoal} onOpenChange={setShowAddGoal} />
     </div>
   )
