@@ -11,30 +11,11 @@ import {
 import { createGoal } from '@/services/goal'
 import type { GoalFormValues } from '@/types/goal'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { LucideIcon } from 'lucide-react'
 import { useRef } from 'react'
 import { toast } from 'sonner'
 import GoalForm, { type GoalFormRef } from "./GoalForm"
 import { goalKeys } from './queryKeys'
 
-interface StepProps {
-  Icon: LucideIcon;
-  iconColor: string;
-  title: string;
-}
-
-function Step({
-  Icon,
-  iconColor,
-  title
-}: StepProps) {
-  return (
-    <div className="flex pb-2 items-center mt-4">
-      <Icon size={18} className={iconColor} />
-      <span className='text-lg ml-2'>{title}</span>
-    </div>
-  )
-}
 // const AnalysisData: any = {
 //   "title": "三个月从零基础学习 React 并达到独立开发门户网站水平",
 //   "description": "用户希望用三个月时间，从零基础开始学习 React，目标是达到能够独立开发门户网站的水平。",

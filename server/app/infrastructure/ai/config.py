@@ -5,8 +5,12 @@
 """
 
 from functools import lru_cache
+from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
+
+SERVER_DIR = Path(__file__).resolve().parents[3]
 
 
 class AISettings(BaseSettings):
@@ -39,10 +43,19 @@ class AISettings(BaseSettings):
     LLM_TIMEOUT: int = 60  # 请求超时（秒）
 
     model_config = {
-        "env_file": ".env",
+        # 不依赖启动命令的 cwd；uvicorn 从仓库根目录启动时也要读取 server/.env
+        "env_file": SERVER_DIR / ".env",
         "env_file_encoding": "utf-8",
         "extra": "ignore",
     }
+
+    @field_validator("LLM_BASE_URL", mode="before")
+    @classmethod
+    def normalize_base_url(cls, value):
+        # .env 中的 None/null 不能作为 URL 传给 AsyncOpenAI
+        if value is None or str(value).strip().lower() in {"", "none", "null"}:
+            return None
+        return str(value).strip().rstrip("/")
 
 
 @lru_cache

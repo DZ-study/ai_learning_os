@@ -19,3 +19,8 @@ export const getGoals = async (): Promise<Goal[]> => {
 export const createGoal = (data: GoalFormValues) => {
   return req.post('/goals/create', data)
 }
+
+/* 启动目标，生成计划 */
+export const startGoal = (id: number) => {
+  return req.post(`/goals/${id}/agent/start`)
+}

@@ -12,11 +12,13 @@ import type { Goal } from '@/types/goal'
 import { GOAL_STATUS } from '@/utils/constants'
 
 interface GoalTableProps {
-  data: Goal[]
+  data: Goal[],
+  onStart: (id: number) => void
 }
 
 export default function GoalTable({
-  data
+  data,
+  onStart
 }: GoalTableProps) {
   return (
     <Table>
@@ -43,7 +45,7 @@ export default function GoalTable({
               <TableCell>{GOAL_STATUS[goal.status]}</TableCell>
               <TableCell className="flex gap-2">
                 <Button variant="outline">详情</Button>
-                {goal.status === "draft" && <Button>启动</Button>}
+                {goal.status === "draft" && <Button onClick={() => onStart(goal.id)}>启动</Button>}
               </TableCell>
             </TableRow>
           ))

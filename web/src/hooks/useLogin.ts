@@ -80,8 +80,8 @@ export function useLogin() {
       } else {
         setError(result.message || t("error.login_failed"))
       }
-    } catch {
-      setError(t("error.network"))
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : t("error.network"))
     } finally {
       setLoading(false)
     }

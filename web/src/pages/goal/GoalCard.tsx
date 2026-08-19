@@ -6,11 +6,10 @@ import { GOAL_STATUS } from '@/utils/constants'
 
 interface GoalCardProps {
   data: Goal[]
+  onStart?: (id: number) => void
 }
 
-export default function GoalCard({
-  data
-}: GoalCardProps) {
+export default function GoalCard({ data, onStart }: GoalCardProps) {
   if (data.length === 0) {
     return <Empty />
   }
@@ -40,7 +39,7 @@ export default function GoalCard({
             <Button variant="outline" size="sm">
               详情
             </Button>
-            {goal.status === "draft" && <Button size="sm">启动</Button>}
+            {goal.status === "draft" && <Button size="sm" onClick={() => onStart?.(goal.id)}>启动</Button>}
           </div>
         </div>
       ))}

@@ -5,6 +5,7 @@ import AddGoalDrawer from "@/pages/goal/AddGoalDrawer"
 import { getGoals } from '@/services/goal'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import GoalCard from './GoalCard'
 import GoalTable from './GoalTable'
 import { goalKeys } from './queryKeys'
@@ -14,6 +15,7 @@ import { ViewSwitcher } from './ViewSwitcher'
 export default function GoalPage() {
   const [showAddGoal, setShowAddGoal] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>("list")
+  const navigate = useNavigate()
 
   const { data: goals } = useQuery({
     queryKey: goalKeys.list(),
@@ -23,6 +25,9 @@ export default function GoalPage() {
   const handleOpen = () => {
     setShowAddGoal(true)
   }
+
+  // 启动目标
+  const handleStart = (goalId: number) => navigate(`/goals/${goalId}/agent`)
 
   return (
     <div>
@@ -37,8 +42,8 @@ export default function GoalPage() {
         />
         <Button onClick={handleOpen}>添加学习目标</Button>
       </div>
-      {viewMode === "list" && <GoalTable data={goals ?? []} />}
-      {viewMode === "card" && <GoalCard data={goals ?? []} />}
+      {viewMode === "list" && <GoalTable data={goals ?? []} onStart={handleStart} />}
+      {viewMode === "card" && <GoalCard data={goals ?? []} onStart={handleStart} />}
       <AddGoalDrawer open={showAddGoal} onOpenChange={setShowAddGoal} />
     </div>
   )

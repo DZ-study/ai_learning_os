@@ -39,10 +39,14 @@ export const useAuthStore = create<AuthState>()((set) => ({
 
   fetchUser: async () => {
     set({ isLoading: true })
-    const result = await authService.fetchUser()
-    if (result.success && result.data) {
-      set({ user: result.data, isAuthenticated: true, isLoading: false })
-    } else {
+    try {
+      const result = await authService.fetchUser()
+      if (result.success && result.data) {
+        set({ user: result.data, isAuthenticated: true, isLoading: false })
+      } else {
+        throw new Error(result.message)
+      }
+    } catch {
       removeTokens()
       set({ user: null, isAuthenticated: false, isLoading: false })
     }

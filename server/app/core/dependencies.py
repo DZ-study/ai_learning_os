@@ -10,6 +10,7 @@ from app.infrastructure.redis.client import redis_client
 from app.infrastructure.redis.service import RedisService
 from app.modules.auth.repository import AuthRepository
 from app.modules.auth.service import AuthService
+from app.modules.goals.agent.service import GoalAgentService
 from app.modules.goals.repository import GoalRepository
 from app.modules.goals.service import GoalService
 from app.modules.user.models import User
@@ -93,3 +94,10 @@ async def get_goal_service(
 ) -> GoalService:
     goal_repository = GoalRepository(session=session)
     return GoalService(session, repository=goal_repository, ai_service=llm_service)
+
+
+def get_goal_agent_service(
+    db: AsyncSession = Depends(get_db),
+    llm_service: LLMService = Depends(get_llm_service),
+):
+    return GoalAgentService(db, llm_service)

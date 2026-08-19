@@ -26,7 +26,6 @@ export default function GoalAIAnalysis({
     mutate,
     isPending,
     isError,
-    isSuccess,
     error
   } = useMutation({
     mutationFn: parseGoalByAI,
