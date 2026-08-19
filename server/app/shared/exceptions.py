@@ -88,3 +88,10 @@ class InternalServerException(AppException):
         code: int = 1,
     ) -> None:
         super().__init__(message, code=code, status_code=500)
+
+
+class ServiceUnavailableException(AppException):
+    """Required external service is temporarily unavailable."""
+
+    def __init__(self, message: str = "服务暂时不可用，请稍后再试", *, code: int = 1) -> None:
+        super().__init__(message, code=code, status_code=503)

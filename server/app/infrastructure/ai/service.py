@@ -71,7 +71,7 @@ class LLMService:
 
     async def parse_goal(self, user_input: str) -> LLMResponse:
         """将用户自然语言描述的学习目标解析为结构化描述。"""
-        from app.infrastructure.ai.prompt import GOAL_PARSE_SYSTEM
+        from server.app.infrastructure.ai.prompts.prompt import GOAL_PARSE_SYSTEM
 
         messages = [
             Message(role="system", content=GOAL_PARSE_SYSTEM),
@@ -83,7 +83,7 @@ class LLMService:
 
     async def generate_plan(self, goal_description: str) -> LLMResponse:
         """根据学习目标生成阶段性学习计划。"""
-        from app.infrastructure.ai.prompt import PLAN_GENERATE_SYSTEM
+        from server.app.infrastructure.ai.prompts.prompt import PLAN_GENERATE_SYSTEM
 
         messages = [
             Message(role="system", content=PLAN_GENERATE_SYSTEM),

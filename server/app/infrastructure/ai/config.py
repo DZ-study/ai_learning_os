@@ -23,9 +23,9 @@ class AISettings(BaseSettings):
     # LLM_PROVIDER: str = "openai"  # openai | deepseek | claude
     # LLM_MODEL: str = "gpt-4o"
     # LLM_API_KEY: str = ""
-    LLM_PROVIDER: str = "deepseek"
-    LLM_API_KEY: str = "sk-4b07ef86b05b421c8ca3e87a2327aef2"
-    LLM_MODEL: str = "deepseek-v4-flash"
+    LLM_PROVIDER: str = ""
+    LLM_API_KEY: str = ""
+    LLM_MODEL: str = ""
 
     # ── OpenAI / OpenAI-compatible ──
     LLM_BASE_URL: str | None = None  # DeepSeek 等兼容 API 的 base_url

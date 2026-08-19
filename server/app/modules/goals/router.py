@@ -33,12 +33,11 @@ async def create_goal(
     return await goal_service.create_goal(user_id=current_user.id, data=data)
 
 
-@router.post("/parse", response_model=GoalParseResponse)
-async def parse_goal(
-    request: GoalParseRequest, goal_service: GoalService = Depends(get_goal_service)
-):
-    return await goal_service.parse_goal(request.messages)
-
+# @router.post("/parse", response_model=GoalParseResponse)
+# async def parse_goal(
+#     request: GoalParseRequest, goal_service: GoalService = Depends(get_goal_service)
+# ):
+#     return await goal_service.parse_goal(request.messages)
 
 # # 获取目标详情
 # @router.get("/{goal_id}", response_model=GoalResponse)
@@ -60,3 +59,12 @@ async def parse_goal(
 # @router.delete("/{goal_id}", status_code=status.HTTP_204_NO_CONTENT)
 # async def delete_goal(goal_id: int, current_user=Depends(get_current_user)):
 #     await goal_service.delete_goal(goal_id=goal_id, user_id=current_user.id)
+
+
+@router.post("/start")
+async def start_goal(
+    goal_id: int,
+    current_user=Depends(get_current_user),
+    goal_service: GoalService = Depends(get_goal_service),
+):
+    return await goal_service.start_goal(goal_id=goal_id, user_id=current_user.id)

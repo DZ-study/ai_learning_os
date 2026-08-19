@@ -1,4 +1,3 @@
-from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.ai.service import LLMService
@@ -6,6 +5,7 @@ from app.modules.goals.repository import GoalRepository
 from app.modules.goals.schemas import (
     GoalCreate,
 )
+from app.shared.exceptions import NotFoundException
 
 
 class GoalService:
@@ -20,7 +20,11 @@ class GoalService:
         goal_data = data.model_dump()
         goal_data["user_id"] = user_id
         goal = await self._repository.create(goal_data)
-        await self.session.commit()
+        try:
+            await self.session.commit()
+        except Exception:
+            await self.session.rollback()
+            raise
         return goal
 
     async def get_goals(self, user_id: int):
@@ -30,9 +34,13 @@ class GoalService:
     async def get_goal(self, goal_id: int):
         result = await self._repository.get_one_by_id(goal_id)
         if not result:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+            raise NotFoundException("目标不存在")
         return result
 
     async def parse_goal(self, messages: str):
         result = await self.ai_service.parse_goal(messages)
         return result
+
+    # TODO
+    async def start_goal(self, goal_id: int, user_id: int):
+        pass

@@ -11,9 +11,9 @@ from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
 from app.infrastructure.ai.config import AISettings, get_ai_settings
-from app.infrastructure.ai.exceptions import LLMApiError, LLMTimeoutError
-from app.infrastructure.ai.providers.base import BaseLLMProvider
 from app.infrastructure.ai.schemas import LLMRequest, LLMResponse, LLMUsage
+from server.app.infrastructure.agent.core.exceptions import LLMApiError, LLMTimeoutError
+from server.app.infrastructure.ai.providers.base import BaseLLMProvider
 
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 

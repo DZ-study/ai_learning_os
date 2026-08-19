@@ -1,3 +1,4 @@
+import logging
 import secrets
 
 from pydantic import EmailStr
@@ -9,15 +10,19 @@ from app.core.security.jwt import (
     decode_token,
 )
 from app.infrastructure.email.service import EmailService
+from app.infrastructure.redis.exceptions import RedisServiceException
 from app.infrastructure.redis.service import RedisService
 from app.modules.user.repository import UserRepository
 from app.shared.exceptions import (
     BadRequestException,
+    ServiceUnavailableException,
     TooManyRequestsException,
     UnauthorizedException,
 )
 
 from .repository import AuthRepository
+
+logger = logging.getLogger(__name__)
 
 
 class AuthService:
@@ -41,7 +46,11 @@ class AuthService:
         """验证码登录，必要时自动创建用户。事务在 service 层提交。"""
 
         # 1. 从 Redis 校验验证码
-        stored_code = await self.redis_service.get(key=f"auth:code:{email}")
+        try:
+            stored_code = await self.redis_service.get(key=f"auth:code:{email}")
+        except RedisServiceException as exc:
+            logger.exception("Verification-code lookup failed")
+            raise ServiceUnavailableException("验证码服务暂时不可用") from exc
 
         if not stored_code:
             raise BadRequestException("验证码已过期，请重新发送")
@@ -64,7 +73,12 @@ class AuthService:
             )
 
         # 3. 所有数据库操作成功，提交事务
-        await self.session.commit()
+        try:
+            await self.session.commit()
+        except Exception:
+            await self.session.rollback()
+            logger.exception("Login database transaction failed")
+            raise
 
         # 4. 签发 JWT
         return {
@@ -76,16 +90,26 @@ class AuthService:
     async def send_code(self, email: EmailStr) -> dict:
         """发送邮箱验证码（无数据库操作）。"""
 
-        can_send = await self.redis_service.check_send_code_limit(email=email)
+        try:
+            can_send = await self.redis_service.check_send_code_limit(email=email)
+        except RedisServiceException as exc:
+            logger.exception("Verification-code rate-limit check failed")
+            raise ServiceUnavailableException("验证码服务暂时不可用") from exc
 
         if not can_send:
             raise TooManyRequestsException("请勿频繁发送验证码，请稍后再试")
 
         code = str(secrets.randbelow(900_000) + 100_000)  # 6 位随机数
 
-        await self.redis_service.set(key=f"auth:code:{email}", value=code, expire=300)
-
-        await self.email_service.send_email(email, "验证码", f"您的验证码是 {code}")
+        try:
+            await self.redis_service.set(key=f"auth:code:{email}", value=code, expire=300)
+            await self.email_service.send_email(email, "验证码", f"您的验证码是 {code}")
+        except RedisServiceException as exc:
+            logger.exception("Verification-code storage failed")
+            raise ServiceUnavailableException("验证码服务暂时不可用") from exc
+        except Exception as exc:
+            logger.exception("Verification-code email delivery failed")
+            raise ServiceUnavailableException("邮件服务暂时不可用") from exc
 
         return {"email": email}
 

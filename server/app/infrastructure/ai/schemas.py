@@ -8,16 +8,13 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-
 # ── 消息 ──
 
 
 class Message(BaseModel):
     """单条对话消息。"""
 
-    role: Literal["system", "user", "assistant"] = Field(
-        ..., description="消息角色"
-    )
+    role: Literal["system", "user", "assistant"] = Field(..., description="消息角色")
     content: str = Field(..., description="消息内容")
 
 
@@ -31,7 +28,9 @@ class LLMRequest(BaseModel):
     """
 
     messages: list[Message] = Field(..., description="消息列表")
-    model: str | None = Field(default=None, description="模型名称，None 则使用配置默认值")
+    model: str | None = Field(
+        default=None, description="模型名称，None 则使用配置默认值"
+    )
     max_tokens: int | None = Field(default=None, description="最大输出 token 数")
     temperature: float | None = Field(default=None, description="温度参数 0-2")
 

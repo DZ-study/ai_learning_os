@@ -7,9 +7,9 @@
 from collections.abc import AsyncIterator
 
 from app.infrastructure.ai.config import AISettings, get_ai_settings
-from app.infrastructure.ai.exceptions import LLMApiError, LLMTimeoutError
-from app.infrastructure.ai.providers.base import BaseLLMProvider
 from app.infrastructure.ai.schemas import LLMRequest, LLMResponse, LLMUsage
+from server.app.infrastructure.agent.core.exceptions import LLMApiError, LLMTimeoutError
+from server.app.infrastructure.ai.providers.base import BaseLLMProvider
 
 
 class ClaudeProvider(BaseLLMProvider):
@@ -103,7 +103,7 @@ class ClaudeProvider(BaseLLMProvider):
             if "max_tokens" in kwargs and isinstance(kwargs["max_tokens"], float):
                 kwargs["max_tokens"] = int(kwargs["max_tokens"])
 
-            async with self._client.messages.stream(**kwargs) as stream:
+            async with self._client.messages.stream(**kwargs) as stream:  # type: ignore
                 async for text in stream.text_stream:
                     yield text
         except Exception as exc:
@@ -132,7 +132,9 @@ class ClaudeProvider(BaseLLMProvider):
         if "timeout" in msg.lower() or "timed out" in msg.lower():
             raise LLMTimeoutError(msg) from exc
         if "rate" in msg.lower():
-            from app.infrastructure.ai.exceptions import LLMRateLimitError
+            from server.app.infrastructure.agent.core.exceptions import (
+                LLMRateLimitError,
+            )
 
             raise LLMRateLimitError(msg) from exc
         raise LLMApiError(

@@ -8,9 +8,9 @@ from collections.abc import AsyncIterator
 from functools import lru_cache
 
 from app.infrastructure.ai.config import AISettings, get_ai_settings
-from app.infrastructure.ai.exceptions import LLMConfigError
-from app.infrastructure.ai.providers.base import BaseLLMProvider
 from app.infrastructure.ai.schemas import LLMRequest, LLMResponse
+from server.app.infrastructure.agent.core.exceptions import LLMConfigError
+from server.app.infrastructure.ai.providers.base import BaseLLMProvider
 
 # Provider 注册表 —— 新增厂商只需在此加一行
 _PROVIDER_REGISTRY: dict[str, type[BaseLLMProvider]] = {}
@@ -19,19 +19,22 @@ _PROVIDER_REGISTRY: dict[str, type[BaseLLMProvider]] = {}
 def _register():
     """延迟注册 Provider，避免未安装的 SDK 导致导入失败。"""
     try:
-        from app.infrastructure.ai.providers.openai import OpenAIProvider
+        from server.app.infrastructure.ai.providers.openai import OpenAIProvider
+
         _PROVIDER_REGISTRY["openai"] = OpenAIProvider
     except ImportError:
         pass
 
     try:
-        from app.infrastructure.ai.providers.deepseek import DeepSeekProvider
+        from server.app.infrastructure.ai.providers.deepseek import DeepSeekProvider
+
         _PROVIDER_REGISTRY["deepseek"] = DeepSeekProvider
     except ImportError:
         pass
 
     try:
-        from app.infrastructure.ai.providers.claude import ClaudeProvider
+        from server.app.infrastructure.ai.providers.claude import ClaudeProvider
+
         _PROVIDER_REGISTRY["claude"] = ClaudeProvider
     except ImportError:
         pass

@@ -98,14 +98,13 @@ class RedisService:
         cooldown_key = f"auth:cooldown:{email}"
         daily_key = f"auth:daily:{email}"
 
-        result = await self.redis_client.eval(
-            script,  # Lua脚本
-            2,  # KEYS的数量
-            cooldown_key,  # KEYS[1]
-            daily_key,  # KEYS[2]
-            settings.COOLDOWN_TIME,  # ARGV[1] 冷却时间
-            86400,  # ARGV[2] 一天
-            settings.MAX_SEND_COUNT,  # ARGV[3] 最大次数
-        )
+        try:
+            result = await self.redis_client.eval(
+                script, 2, cooldown_key, daily_key,
+                settings.COOLDOWN_TIME, 86400, settings.MAX_SEND_COUNT,
+            )
+        except Exception:
+            logger.exception("Redis rate-limit check failed")
+            raise RedisServiceException("Redis operation failed") from None
 
         return result == 1

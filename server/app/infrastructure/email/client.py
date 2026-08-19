@@ -1,7 +1,11 @@
+import logging
 from email.message import EmailMessage
 
 import aiosmtplib
 from pydantic import EmailStr
+
+
+logger = logging.getLogger(__name__)
 
 
 class EmailClient:
@@ -25,11 +29,15 @@ class EmailClient:
 
         message.set_content(content)
 
-        await aiosmtplib.send(
-            message,
-            hostname=host,
-            port=port,
-            username=username,
-            password=password,
-            use_tls=True,
-        )
+        try:
+            await aiosmtplib.send(
+                message,
+                hostname=host,
+                port=port,
+                username=username,
+                password=password,
+                use_tls=True,
+            )
+        except (aiosmtplib.SMTPException, OSError):
+            logger.exception("Email delivery failed recipient=%s", to_email)
+            raise

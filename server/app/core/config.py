@@ -5,6 +5,8 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     APP_NAME: str = "AI Learning OS API"
+    LOG_LEVEL: str = "INFO"
+    SQL_ECHO: bool = False
     DATABASE_URL: str = ""
     REDIS_URL: str = ""
 
