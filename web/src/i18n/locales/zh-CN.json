@@ -1,10 +1,11 @@
 {
   "menu": {
-    "dashboard": "仪表盘",
+    "dashboard": "今天",
     "goals": "学习目标",
     "agent": "Agent 规划",
     "tutor": "AI Tutor",
-    "knowledge": "知识网络"
+    "knowledge": "知识网络",
+    "my_goals": "我的目标"
   },
   "header": {
     "switch_lang": "切换语言",

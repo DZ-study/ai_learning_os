@@ -18,7 +18,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()((set) => ({
   user: null,
-  isLoading: true,
+  isLoading: getAccessToken() !== null,
   isAuthenticated: getAccessToken() !== null,
 
   login: async (tokens: TokenData) => {
@@ -38,6 +38,10 @@ export const useAuthStore = create<AuthState>()((set) => ({
   },
 
   fetchUser: async () => {
+    if (!getAccessToken()) {
+      set({ isLoading: false })
+      return
+    }
     set({ isLoading: true })
     try {
       const result = await authService.fetchUser()

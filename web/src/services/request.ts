@@ -41,6 +41,14 @@ function processQueue(error: unknown, token: string | null) {
   pendingQueue = []
 }
 
+function redirectToLogin() {
+  clearTokens()
+  if (window.location.pathname !== "/login") {
+    window.history.replaceState({}, "", "/login")
+    window.dispatchEvent(new PopStateEvent("popstate"))
+  }
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -67,8 +75,7 @@ api.interceptors.response.use(
       const refreshToken = getRefreshToken()
 
       if (!refreshToken) {
-        clearTokens()
-        window.location.href = "/login"
+        redirectToLogin()
         return Promise.reject(error)
       }
 
@@ -99,14 +106,12 @@ api.interceptors.response.use(
         }
 
         // refresh 失败
-        clearTokens()
+        redirectToLogin()
         processQueue(new Error("refresh failed"), null)
-        window.location.href = "/login"
         return Promise.reject(error)
       } catch (refreshError) {
-        clearTokens()
+        redirectToLogin()
         processQueue(refreshError, null)
-        window.location.href = "/login"
         return Promise.reject(refreshError)
       } finally {
         isRefreshing = false
