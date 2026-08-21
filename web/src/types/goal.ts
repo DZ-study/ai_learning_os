@@ -28,3 +28,10 @@ export type Goal = GoalFormValues & {
   status: 'draft' | 'active' | 'paused' | 'completed' | 'archived',
   progress?: number
 }
+
+export type Agent = {
+  session_id: string,
+  stage: string,
+  message?: string,
+  question?: string
+}

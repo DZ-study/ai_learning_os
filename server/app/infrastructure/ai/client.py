@@ -7,7 +7,7 @@
 from collections.abc import AsyncIterator
 from functools import lru_cache
 
-from app.infrastructure.agent.core.exceptions import LLMConfigError
+from app.modules.goals.agent.exceptions import LLMConfigError
 from app.infrastructure.ai.config import AISettings, get_ai_settings
 from app.infrastructure.ai.providers.base import BaseLLMProvider
 from app.infrastructure.ai.schemas import LLMRequest, LLMResponse

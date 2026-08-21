@@ -85,7 +85,6 @@ export default function MainSidebar() {
                   <span className="px-2 text-xs text-muted-foreground">暂无目标</span>
                 </SidebarMenuSubItem>
               )}
-
               {/* 核心修改：遍历目标列表 */}
               {goals.map((goal) => (
                 <SidebarMenuItem key={goal.id}>
@@ -109,28 +108,6 @@ export default function MainSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        {/* <SidebarGroup>
-          <SidebarGroupLabel className="text-sm text-sidebar-foreground">我的目标</SidebarGroupLabel>
-          <SidebarGroupAction>
-            <Plus className="cursor-pointer" /> <span className="sr-only">Add Project</span>
-          </SidebarGroupAction>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuSub>
-                {isLoading && <SidebarMenuSubItem><span className="px-2 text-xs text-muted-foreground">loading…</span></SidebarMenuSubItem>}
-                {!isLoading && goals.length === 0 && <SidebarMenuSubItem><span className="px-2 text-xs text-muted-foreground">暂无目标</span></SidebarMenuSubItem>}
-                {goals.map((goal) => <SidebarMenuSubItem key={goal.id}>
-                  <SidebarMenuSubButton
-                    render={<NavLink to={`/goals/${goal.id}/agent`} onClick={() => handleClick(goal)} />}
-                    isActive={location.pathname === `/goals/${goal.id}/agent`}
-                    className="transition-colors"
-                  >
-                    <span>{goal.title}</span>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>)}
-              </SidebarMenuSub></SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup> */}
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>

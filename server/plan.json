@@ -1,0 +1,154 @@
+{
+  "summary": "通过90天从零基础系统掌握React，以参考并仿制开源项目为主线，从基础环境搭建到简单项目、中等项目、复杂全栈项目逐步进阶，最终独立完成并部署一个综合性React应用。",
+  "milestones": [
+    {
+      "title": "基础预备与React入门",
+      "objective": "掌握React运行所需的HTML/CSS/JavaScript基础，理解组件、JSX、props、state等核心概念，能创建并运行React应用。",
+      "tasks": [
+        {
+          "title": "完成JavaScript基础练习",
+          "description": "学习变量、函数、数组、对象、条件语句、循环，写一个操作数组和对象的静态页面。",
+          "estimated_minutes": 120
+        },
+        {
+          "title": "配置开发环境",
+          "description": "安装Node.js、npm、git、VSCode，验证node -v和npm -v能正常输出。",
+          "estimated_minutes": 30
+        },
+        {
+          "title": "阅读React官方文档入门章节",
+          "description": "通读react.dev上的Learn React前四章，包括快速开始、描述UI、添加交互、管理状态。",
+          "estimated_minutes": 60
+        },
+        {
+          "title": "用Create React App创建第一个应用",
+          "description": "运行npx create-react-app my-app，启动开发服务器，修改App.js文字并观察热更新。",
+          "estimated_minutes": 30
+        },
+        {
+          "title": "完成JSX和组件练习",
+          "description": "创建一个包含标题、按钮和列表的组件，学会在JSX中使用JavaScript表达式。",
+          "estimated_minutes": 60
+        },
+        {
+          "title": "学习state和props",
+          "description": "写一个计数器组件：通过useState保存count，通过props传递参数给子组件。",
+          "estimated_minutes": 60
+        },
+        {
+          "title": "学习条件渲染和列表渲染",
+          "description": "用数组数据渲染列表，根据状态显示空状态或已完成的提示，制作一个静态待办事项。",
+          "estimated_minutes": 90
+        }
+      ]
+    },
+    {
+      "title": "仿制简单开源项目",
+      "objective": "通过运行、阅读和仿制简单React开源项目，掌握基础工程化、组件拆分和路由。",
+      "tasks": [
+        {
+          "title": "调研简单React开源项目",
+          "description": "在GitHub搜索README中带有react-todo-list或react-calculator的项目，选高星项目，阅读结构和文档。",
+          "estimated_minutes": 60
+        },
+        {
+          "title": "运行选定的开源项目",
+          "description": "git clone项目，安装依赖，npm start运行，操作功能并理解每个页面模块的作用。",
+          "estimated_minutes": 30
+        },
+        {
+          "title": "仿写TodoList项目",
+          "description": "从零用create-react-app做一个待办事项应用，支持添加、删除、标记完成、筛选全部/已完成/未完成。",
+          "estimated_minutes": 120
+        },
+        {
+          "title": "仿写计算器项目",
+          "description": "实现包含加减乘除和清除功能的计算器，处理连续运算和运算优先级，使用useReducer管理状态。",
+          "estimated_minutes": 90
+        },
+        {
+          "title": "加入React Router并部署",
+          "description": "给TodoList应用新增“关于”页面，用react-router-dom实现两个路由，构建后部署到GitHub Pages。",
+          "estimated_minutes": 120
+        }
+      ]
+    },
+    {
+      "title": "拆解中等开源项目",
+      "objective": "分析中等复杂React开源项目的架构，掌握Hooks、Context/useReducer、数据请求，并能为开源项目贡献代码。",
+      "tasks": [
+        {
+          "title": "选择并运行中等React开源项目",
+          "description": "找一个react-dashboard或react-ecommerce模板项目，比如admin-dashboard或fake-store，clone并成功启动。",
+          "estimated_minutes": 60
+        },
+        {
+          "title": "绘制项目组件树和状态流",
+          "description": "阅读项目src目录，记录components、pages、hooks、context文件夹，画出组件层级和状态传递图。",
+          "estimated_minutes": 90
+        },
+        {
+          "title": "学习useEffect和自定义Hook",
+          "description": "在项目中找到数据请求的代码，自己实现一个useFetch自定义Hook，支持loading和error状态。",
+          "estimated_minutes": 60
+        },
+        {
+          "title": "用Context/useReducer重构购物车",
+          "description": "在仿制项目中用Context管理登录态或购物车，通过useReducer处理添加、删除、清空操作。",
+          "estimated_minutes": 120
+        },
+        {
+          "title": "仿写项目首页并接入Mock API",
+          "description": "用json-server或Mock API实现商品列表和详情页，模仿开源项目布局，完成数据请求和渲染。",
+          "estimated_minutes": 120
+        },
+        {
+          "title": "向开源项目提交PR",
+          "description": "给所选或相关项目提一个小的bugfix、文档改进或issue反馈，体验真实协作流程。",
+          "estimated_minutes": 60
+        }
+      ]
+    },
+    {
+      "title": "进阶复杂项目与综合实战",
+      "objective": "学习TypeScript、Next.js、权限、性能优化等进阶知识，独立开发一个完整的React全栈项目并部署上线。",
+      "tasks": [
+        {
+          "title": "研究复杂开源项目架构",
+          "description": "分别阅读antd pro或react-admin的目录结构，分析路由、权限、布局、菜单如何管理，并记录笔记。",
+          "estimated_minutes": 90
+        },
+        {
+          "title": "将现有简单组件改为TypeScript",
+          "description": "在React项目中使用TypeScript为TodoList定义Props、State和事件类型，替换.js文件为.tsx并保证编译通过。",
+          "estimated_minutes": 60
+        },
+        {
+          "title": "用Next.js搭建博客项目",
+          "description": "创建Next.js项目，实现静态生成页面和动态路由，从Markdown文件读取文章列表和详情。",
+          "estimated_minutes": 120
+        },
+        {
+          "title": "集成登录和状态持久化",
+          "description": "在Next.js或React应用中实现登录表单、获取token，使用localStorage或cookie保存登录状态并刷新保留。",
+          "estimated_minutes": 90
+        },
+        {
+          "title": "使用React Query请求真实API",
+          "description": "接入一个公共API或自建后端，用React Query处理数据缓存、加载中和错误重试，替换手写useEffect请求。",
+          "estimated_minutes": 90
+        },
+        {
+          "title": "优化性能和代码分包",
+          "description": "对综合项目使用React.memo、useCallback、React.lazy和Suspense，并用Lighthouse分析优化前后差异。",
+          "estimated_minutes": 90
+        },
+        {
+          "title": "独立开发并部署综合项目",
+          "description": "结合Todo、购物车、仪表盘等思路，独立开发一个“个人任务与财务仪表盘”项目，包含列表、表单、图表，部署到Vercel或Netlify。",
+          "estimated_minutes": 180
+        }
+      ]
+    }
+  ]
+}
