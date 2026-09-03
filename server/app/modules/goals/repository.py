@@ -3,6 +3,7 @@
 """
 
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.modules.goals.models import Goals
 
@@ -19,7 +20,9 @@ class GoalRepository:
 
     async def get_all_by_user_id(self, user_id: int) -> list[Goals]:
         result = await self.session.execute(
-            select(Goals).where(Goals.user_id == user_id)
+            select(Goals)
+            .where(Goals.user_id == user_id)
+            .options(selectinload(Goals.plan))
         )
         return result.scalars().all()
 

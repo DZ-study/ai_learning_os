@@ -58,6 +58,19 @@ class GoalUpdate(BaseModel):
     status: Literal["draft", "active", "paused", "completed", "archived"] | None = None
 
 
+class GoalPlanResponse(BaseModel):
+    id: int
+    goal_id: int
+    user_id: int
+    version: int
+    content: dict[str, Any]
+
+    status: str
+    confirmed_at: datetime | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class GoalResponse(BaseModel):
     """Goal data returned to the web client."""
 
@@ -72,6 +85,7 @@ class GoalResponse(BaseModel):
     priority: Literal["low", "medium", "high"] | None
     preferences: str | None
     constraints: str | None
+    plan: GoalPlanResponse | None = None
     status: Literal["draft", "active", "paused", "completed", "archived"]
     created_at: datetime = Field(serialization_alias="createdAt")
     updated_at: datetime = Field(serialization_alias="updatedAt")

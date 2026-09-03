@@ -10,7 +10,9 @@ logger = logging.getLogger(__name__)
 
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=settings.SQL_ECHO,
+    echo=settings.SQL_ECHO,  # 是否在控制台输出SQL语句
+    pool_pre_ping=True,
+    pool_recycle=1800,
 )
 
 # 创建异步数据库会话，所有数据库操作都在会话中进行
@@ -24,5 +26,7 @@ async def get_db() -> AsyncIterator[AsyncSession]:
             yield session
         except Exception:
             await session.rollback()
-            logger.exception("Database transaction rolled back because the request failed")
+            logger.exception(
+                "Database transaction rolled back because the request failed"
+            )
             raise

@@ -1,7 +1,7 @@
 {
   "menu": {
     "dashboard": "Dashboard",
-    "goals": "Learning Goals",
+    "goal": "Learning Goals",
     "agent": "Agent Planning",
     "tutor": "AI Tutor",
     "knowledge": "Knowledge Graph"

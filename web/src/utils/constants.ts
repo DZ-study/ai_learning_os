@@ -18,3 +18,11 @@ export const GOAL_STATUS = {
   completed: "已完成",
   archived: "归档",
 }
+
+
+// 目标优先级
+export const GOAL_PRIORITY = {
+  low: { text: "低", color: "gray" },
+  medium: { text: "中", color: "green" },
+  high: { text: "高", color: "red" },
+}

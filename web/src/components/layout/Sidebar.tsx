@@ -19,11 +19,15 @@ import { getGoals } from "@/services/goal"
 import { useGoalStore } from '@/stores/goalStore'
 import type { Goal } from '@/types/goal'
 import { useQuery } from "@tanstack/react-query"
-import { Bot, GraduationCap, LayoutDashboard, Network, Plus, Target } from "lucide-react"
+import { Bot, GraduationCap, LayoutDashboard, Network, Target } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { NavLink, useLocation } from "react-router-dom"
 
-const menuItems = [
+
+export const menuItems = [
+  { key: "dashboard", path: "/", icon: LayoutDashboard, exact: true },
+  { key: "goal", path: "/study_goal", icon: Target },
+  { key: "learning", path: "/learning", icon: Target },
   { key: "agent", path: "/agent", icon: Bot },
   { key: "tutor", path: "/ai", icon: GraduationCap },
   { key: "knowledge", path: "/knowledge", icon: Network },
@@ -51,33 +55,17 @@ export default function MainSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  render={<NavLink to="/" end={true} onClick={closeOnMobile} />}
-                  isActive={location.pathname === "/"}
-                  tooltip={t(`menu.dashboard`)}
-                  className="transition-colors"
-                >
-                  <LayoutDashboard /><span className='text-base'>{t(`menu.dashboard`)}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <SidebarGroup>
+        {menuItems.map((item) => item.key === "learning" ? <SidebarGroup key={item.key}>
           <SidebarGroupLabel className="text-sm text-sidebar-foreground">我的目标</SidebarGroupLabel>
           <SidebarGroupAction>
-            <Plus className="cursor-pointer" /> <span className="sr-only">Add Project</span>
+            {/* <Plus className="cursor-pointer" /> <span className="sr-only">Add Project</span> */}
           </SidebarGroupAction>
           <SidebarGroupContent>
             <SidebarMenu>
               {/* 加载中 / 暂无目标 的提示保持不变 */}
               {isLoading && (
                 <SidebarMenuSubItem>
-                  <span className="px-2 text-xs text-muted-foreground">加载中…</span>
+                  <span className="px-2 text-xs text-muted-foreground">Loading…</span>
                 </SidebarMenuSubItem>
               )}
               {!isLoading && goals.length === 0 && (
@@ -107,26 +95,23 @@ export default function MainSidebar() {
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
-        </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => {
-                const active = item.path === "/" ? location.pathname === "/" : location.pathname.startsWith(item.path)
-                return <SidebarMenuItem key={item.key}>
+        </SidebarGroup> :
+          <SidebarGroup className="p-1" key={item.key}>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem key={item.key}>
                   <SidebarMenuButton
                     render={<NavLink to={item.path} end={item.path === "/"} onClick={closeOnMobile} />}
-                    isActive={active}
+                    isActive={item.path === "/" ? location.pathname === "/" : location.pathname.startsWith(item.path)}
                     tooltip={t(`menu.${item.key}`)}
                     className="transition-colors"
                   >
                     <item.icon /><span className='text-base'>{t(`menu.${item.key}`)}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>)}
       </SidebarContent>
       <SidebarRail />
     </Sidebar>

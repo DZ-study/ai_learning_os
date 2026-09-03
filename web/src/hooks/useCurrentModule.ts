@@ -1,4 +1,5 @@
 // hooks/useCurrentModule.ts
+import { menuItems } from '@/components/layout/Sidebar'
 import { useGoalStore } from '@/stores/goalStore'
 import { useTranslation } from "react-i18next"
 import { useLocation } from "react-router-dom"
@@ -8,14 +9,6 @@ export const useCurrentModule = () => {
   const location = useLocation()
   const pathname = location.pathname
   const { getCurrentGoal } = useGoalStore()
-
-  // 定义所有静态菜单项（与 Sidebar 保持一致）
-  const staticMenuItems = [
-    { key: "dashboard", path: "/", exact: true },
-    { key: "agent", path: "/agent" },
-    { key: "tutor", path: "/ai" },
-    { key: "knowledge", path: "/knowledge" },
-  ]
 
   // 1. 优先匹配动态路由 /goals/:id/...
   const goalMatch = pathname.match(/^\/goals\/([^/]+)(\/.*)?$/)
@@ -32,12 +25,14 @@ export const useCurrentModule = () => {
   }
 
   // 2. 匹配静态路由
-  const matchedStatic = staticMenuItems.find((item) => {
+  const matchedStatic = menuItems.find((item) => {
     if (item.exact) return pathname === item.path
     return pathname.startsWith(item.path)
   })
 
   if (matchedStatic) {
+    console.log(matchedStatic);
+
     return {
       label: t(`menu.${matchedStatic.key}`),
       isDynamic: false,
@@ -45,5 +40,5 @@ export const useCurrentModule = () => {
   }
 
   // 3. 兜底
-  return { label: t("menu.unknown"), isDynamic: false }
+  return { label: '', isDynamic: false }
 }

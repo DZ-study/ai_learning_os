@@ -7,10 +7,10 @@
 from collections.abc import AsyncIterator
 from functools import lru_cache
 
-from app.modules.goals.agent.exceptions import LLMConfigError
 from app.infrastructure.ai.config import AISettings, get_ai_settings
 from app.infrastructure.ai.providers.base import BaseLLMProvider
 from app.infrastructure.ai.schemas import LLMRequest, LLMResponse
+from app.modules.agent.exceptions import LLMConfigError
 
 # Provider 注册表 —— 新增厂商只需在此加一行
 _PROVIDER_REGISTRY: dict[str, type[BaseLLMProvider]] = {}

@@ -37,9 +37,9 @@ class GoalService:
             raise NotFoundException("目标不存在")
         return result
 
-    async def parse_goal(self, messages: str):
-        result = await self.ai_service.parse_goal(messages)
-        return result
+    # async def parse_goal(self, messages: str):
+    # result = await self.ai_service.parse_goal(messages)
+    # return result
 
     # TODO
     async def start_goal(self, goal_id: int, user_id: int):

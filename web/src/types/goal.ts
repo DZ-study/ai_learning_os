@@ -26,12 +26,25 @@ export type GoalFormValues = z.infer<typeof goalFormSchema>
 export type Goal = GoalFormValues & {
   id: number,
   status: 'draft' | 'active' | 'paused' | 'completed' | 'archived',
+  priority: 'low' | 'medium' | 'high',
   progress?: number
+  plan?: object
 }
 
 export type Agent = {
-  session_id: string,
+  session_id: number,
   stage: string,
   message?: string,
   question?: string
 }
+
+export interface GoalListShow {
+  data: Goal[],
+  onStart: (id: number) => void
+  onGenerate: (id: number | null) => void
+}
+
+export type GoalTableProps = GoalListShow
+
+
+export type GoalCardProps = GoalTableProps

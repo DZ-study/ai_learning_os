@@ -4,7 +4,6 @@ from email.message import EmailMessage
 import aiosmtplib
 from pydantic import EmailStr
 
-
 logger = logging.getLogger(__name__)
 
 

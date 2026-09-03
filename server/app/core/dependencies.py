@@ -3,21 +3,23 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.ai.client import LLMClient, create_llm_client
+from app.infrastructure.ai.model import get_chat_model
 from app.infrastructure.ai.service import LLMService
 from app.infrastructure.email.client import EmailClient
 from app.infrastructure.email.service import EmailService
 from app.infrastructure.redis.client import redis_client
 from app.infrastructure.redis.service import RedisService
+from app.modules.agent.service import GoalAgentService
+from app.modules.agent.session.repository import AgentSessionRepository
+from app.modules.agent.session.service import AgentSessionService
 from app.modules.auth.repository import AuthRepository
 from app.modules.auth.service import AuthService
-from app.modules.goals.agent.service import GoalAgentService
 from app.modules.goals.repository import GoalRepository
 from app.modules.goals.service import GoalService
 from app.modules.user.models import User
 from app.modules.user.repository import UserRepository
 from app.modules.user.service import UserService
 from app.shared.exceptions import UnauthorizedException
-
 from .database.session import get_db
 from .security.jwt import decode_token
 
@@ -70,22 +72,18 @@ def get_auth_service(session: AsyncSession = Depends(get_db)) -> AuthService:
 def get_user_service(session: AsyncSession = Depends(get_db)) -> UserService:
     """组装 UserService，注入所有依赖。session 由 FastAPI 依赖框架管理生命周期。"""
     user_repository = UserRepository(session=session)
-    return UserService(repository=user_repository)
+    return UserService(db=session, repository=user_repository)
 
 
 # ── AI / LLM 依赖 ──────────────────────────────
-
-
 def get_llm_client() -> LLMClient:
     """获取 LLMClient 单例。Provider 由 LLM_PROVIDER 环境变量决定。"""
     return create_llm_client()
 
 
-def get_llm_service(
-    llm: LLMClient = Depends(get_llm_client),
-) -> LLMService:
+def get_llm_service() -> LLMService:
     """组装 LLMService，注入 LLMClient。"""
-    return LLMService(llm)
+    return LLMService(get_chat_model())
 
 
 async def get_goal_service(
@@ -98,6 +96,16 @@ async def get_goal_service(
 
 def get_goal_agent_service(
     db: AsyncSession = Depends(get_db),
-    llm_service: LLMService = Depends(get_llm_service),
-):
-    return GoalAgentService(db, llm_service)
+    llm: LLMService = Depends(get_llm_service),
+) -> GoalAgentService:
+    session_repository = AgentSessionRepository(db=db)
+    session_service = AgentSessionService(
+        db=db,
+        session_repository=session_repository,
+    )
+
+    return GoalAgentService(
+        llm=llm,
+        session=db,
+        agent_session_service=session_service,
+    )

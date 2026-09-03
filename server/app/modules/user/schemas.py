@@ -7,3 +7,7 @@ class GetProfileResponse(BaseModel):
     nickname: str | None
     avatar: str | None
     created_at: str
+
+
+class UpdateProfileRequest(BaseModel):
+    nickname: str | None = None

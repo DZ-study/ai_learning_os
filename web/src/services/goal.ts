@@ -20,7 +20,25 @@ export const createGoal = (data: GoalFormValues) => {
   return req.post('/goals/create', data)
 }
 
-/* 启动目标，生成计划 */
-export const startGoal = (id: number) => {
-  return req.post(`/goals/${id}/agent/start`)
+/* 生成计划 */
+export const generatePlan = (id: number, sessionId: number): Promise<void> => {
+  return req.post(`/goals/${id}/agent/confirm`, {
+    session_id: sessionId
+  })
 }
+
+// /* delete  启动目标，生成计划 */
+// export const startGoal = (id: number) => {
+//   return req.post(`/goals/${id}/agent/start`)
+// }
+
+/** 生成计划——流式输出*/
+export const streamPlan = (id: number, session_id: number | null, message: string, signal?: AbortSignal) => {
+  return req.post(`/goals/${id}/agent/messages/stream`, {
+    session_id,
+    message
+  }, {
+    signal
+  })
+}
+

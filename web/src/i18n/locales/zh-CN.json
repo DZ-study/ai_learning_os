@@ -1,7 +1,7 @@
 {
   "menu": {
     "dashboard": "今天",
-    "goals": "学习目标",
+    "goal": "学习目标",
     "agent": "Agent 规划",
     "tutor": "AI Tutor",
     "knowledge": "知识网络",

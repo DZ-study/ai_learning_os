@@ -1,45 +1,14 @@
-import { Button } from "@/components/ui/button"
+import AgentSession from '@/components/ai/AgentSession'
 import type { Agent } from "@/types/goal"
 import {
-  AssistantRuntimeProvider,
-  ComposerPrimitive,
-  MessagePrimitive,
-  ThreadPrimitive,
-  type AssistantRuntime,
+  type AssistantRuntime
 } from "@assistant-ui/react"
-import { ChevronDown, ChevronRight, ListChecks, Send, Sparkles, Target, TrendingUp } from "lucide-react"
+import { ChevronDown, ChevronRight, ListChecks, Sparkles, Target, TrendingUp } from "lucide-react"
 
 type GoalAgentProps = {
   agent: Agent | null
   runtime: AssistantRuntime
   status: string
-}
-
-export function AgentSession() {
-  return (
-    <ThreadPrimitive.Root className="flex min-h-0 h-full flex-col bg-background">
-      <ThreadPrimitive.Viewport className="flex-1 space-y-5 overflow-y-auto px-5 py-7 sm:px-8">
-        <ThreadPrimitive.Messages components={{
-          UserMessage: () => (
-            <MessagePrimitive.Root className="flex justify-end">
-              <div className="max-w-[82%] rounded-2xl bg-primary px-4 py-3 text-sm text-primary-foreground"><MessagePrimitive.Content /></div>
-            </MessagePrimitive.Root>
-          ),
-          AssistantMessage: () => (
-            <MessagePrimitive.Root className="flex gap-3">
-              <div className="mt-1 rounded-full bg-primary/10 p-2 text-primary"><Sparkles size={16} /></div>
-              <div className="max-w-[85%] rounded-2xl border border-border bg-card px-4 py-3 text-sm leading-6"><MessagePrimitive.Content /></div>
-            </MessagePrimitive.Root>
-          ),
-        }} />
-        <ThreadPrimitive.ScrollToBottom />
-      </ThreadPrimitive.Viewport>
-      <ComposerPrimitive.Root className="m-4 flex items-end gap-2 rounded-xl border bg-background p-2 shadow-sm sm:m-6">
-        <ComposerPrimitive.Input autoFocus placeholder="输入你的回答…" className="min-h-10 flex-1 resize-none bg-transparent px-3 py-2 text-sm outline-none" />
-        <ComposerPrimitive.Send asChild><Button size="icon" aria-label="发送"><Send size={16} /></Button></ComposerPrimitive.Send>
-      </ComposerPrimitive.Root>
-    </ThreadPrimitive.Root>
-  )
 }
 
 export function CurrentProgress({ progress = 65 }: { progress?: number }) {
@@ -81,11 +50,7 @@ export default function GoalAgent({ agent, runtime, status }: GoalAgentProps) {
           <p className="text-sm text-muted-foreground">{agent ? status : "正在启动 Agent…"}</p>
         </div>
       </div>
-      <div className="min-h-0 flex-1">
-        <AssistantRuntimeProvider runtime={runtime}>
-          <AgentSession />
-        </AssistantRuntimeProvider>
-      </div>
+      <AgentSession sessionId={1} agentType='tutor' runtime={runtime} />
     </main>
     <div className="w-full space-y-5 overflow-y-auto bg-muted/20 p-5 lg:w-[23rem] lg:shrink-0">
       <CurrentProgress />

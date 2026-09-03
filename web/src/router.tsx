@@ -8,7 +8,7 @@ const GoalPage = lazy(() => import("./pages/goal/GoalPage"))
 const AgentPage = lazy(() => import("./pages/AgentPage"))
 const AITutorPage = lazy(() => import("./pages/AITutorPage"))
 const KnowledgePage = lazy(() => import("./pages/KnowledgePage"))
-const GoalAgentPage = lazy(() => import("./pages/goal/GoalAgentPage"))
+const GoalAgentPage = lazy(() => import("./pages/goal/GoalAgentSession"))
 
 const LoginPage = lazy(() => import("./pages/LoginPage"))
 
@@ -30,7 +30,7 @@ export const router = createBrowserRouter([
             element: <Layout />,
             children: [
               { index: true, element: <HomePage /> },
-              { path: "goals", element: <GoalPage /> },
+              { path: "study_goal", element: <GoalPage /> },
               { path: "goals/:goalId/agent", element: <GoalAgentPage /> },
               { path: "agent", element: <AgentPage /> },
               { path: "ai", element: <AITutorPage /> },

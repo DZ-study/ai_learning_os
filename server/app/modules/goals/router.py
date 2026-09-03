@@ -3,8 +3,6 @@ from fastapi import APIRouter, Depends, status
 from app.core.dependencies import get_current_user, get_goal_service
 from app.modules.goals.schemas import (
     GoalCreate,
-    GoalParseRequest,
-    GoalParseResponse,
     GoalResponse,
 )
 from app.modules.goals.service import GoalService

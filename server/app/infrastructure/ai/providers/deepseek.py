@@ -10,10 +10,10 @@ from typing import cast
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
-from app.modules.goals.agent.exceptions import LLMApiError, LLMTimeoutError
 from app.infrastructure.ai.config import AISettings, get_ai_settings
 from app.infrastructure.ai.providers.base import BaseLLMProvider
 from app.infrastructure.ai.schemas import LLMRequest, LLMResponse, LLMUsage
+from app.modules.agent.exceptions import LLMApiError, LLMTimeoutError
 
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 

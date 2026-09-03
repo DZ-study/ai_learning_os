@@ -6,10 +6,10 @@
 
 from collections.abc import AsyncIterator
 
-from app.modules.goals.agent.exceptions import LLMApiError, LLMTimeoutError
 from app.infrastructure.ai.config import AISettings, get_ai_settings
 from app.infrastructure.ai.providers.base import BaseLLMProvider
 from app.infrastructure.ai.schemas import LLMRequest, LLMResponse, LLMUsage
+from app.modules.agent.exceptions import LLMApiError, LLMTimeoutError
 
 
 class ClaudeProvider(BaseLLMProvider):
@@ -132,7 +132,7 @@ class ClaudeProvider(BaseLLMProvider):
         if "timeout" in msg.lower() or "timed out" in msg.lower():
             raise LLMTimeoutError(msg) from exc
         if "rate" in msg.lower():
-            from app.modules.goals.agent.exceptions import (
+            from app.modules.agent.exceptions import (
                 LLMRateLimitError,
             )
 

@@ -1,13 +1,8 @@
 import Empty from "@/components/Empty"
 import { Button } from "@/components/ui/button"
 
-import type { Goal } from '@/types/goal'
+import type { GoalCardProps } from '@/types/goal'
 import { GOAL_STATUS } from '@/utils/constants'
-
-interface GoalCardProps {
-  data: Goal[]
-  onStart?: (id: number) => void
-}
 
 export default function GoalCard({ data, onStart }: GoalCardProps) {
   if (data.length === 0) {

@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Any, Optional
+from typing import Optional
 
 from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
@@ -61,6 +61,12 @@ class Goals(TimestampMixin, Base):
 
     user = relationship("User", back_populates="goals")
 
+    plan = relationship(
+        "GoalPlan",
+        back_populates="goal",
+        uselist=False,
+    )
+
 
 # 目标计划
 class GoalPlan(TimestampMixin, Base):
@@ -92,6 +98,11 @@ class GoalPlan(TimestampMixin, Base):
 
     items = relationship(
         "GoalPlanItem", back_populates="plan", cascade="all, delete-orphan"
+    )
+
+    goal = relationship(
+        "Goals",
+        back_populates="plan",
     )
 
 
@@ -167,31 +178,3 @@ class LearningTask(TimestampMixin, Base):
         nullable=False,
         default="pending",
     )
-
-
-class GoalAgentSession(TimestampMixin, Base):
-    __tablename__ = "goal_agent_sessions"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True)
-
-    goal_id: Mapped[int] = mapped_column(
-        ForeignKey("goals.id", ondelete="CASCADE"), nullable=False
-    )
-
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
-
-    stage: Mapped[str] = mapped_column(
-        String(50), nullable=False, default="collecting_info"
-    )
-
-    # 保存Agent收集到的信息
-    context: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-
-    # LLM生成但用户还没确认的计划
-    pending_plan: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
-
-    last_question: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-
-    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
