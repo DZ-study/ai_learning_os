@@ -19,7 +19,7 @@ import { getGoals } from "@/services/goal"
 import { useGoalStore } from '@/stores/goalStore'
 import type { Goal } from '@/types/goal'
 import { useQuery } from "@tanstack/react-query"
-import { Bot, GraduationCap, LayoutDashboard, Network, Target } from "lucide-react"
+import { BookOpen, Bot, GraduationCap, LayoutDashboard, Network, Target } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { NavLink, useLocation } from "react-router-dom"
 
@@ -88,7 +88,7 @@ export default function MainSidebar() {
                     className="transition-colors"
                   >
                     {/* 关键：在收起状态下显示一个图标，展开状态下显示文字 */}
-                    <Target className="size-4" />
+                    <BookOpen className="size-4" />
                     <span className="truncate">{goal.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

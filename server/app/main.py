@@ -22,13 +22,15 @@ configure_logging()
 logger = logging.getLogger(__name__)
 
 
+# FastAPI 应用启动和关闭时执行事情的地方。
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # 启动时尝试建表（作为安全兜底，正式的迁移由 alembic 管理）
     try:
-        logger.info("Initializing database schema")
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Starting application")
+        # logger.info("Initializing database schema")
+        # async with engine.begin() as conn:
+        #     await conn.run_sync(Base.metadata.create_all)
         yield
     except Exception:
         logger.exception("Application lifecycle failed")

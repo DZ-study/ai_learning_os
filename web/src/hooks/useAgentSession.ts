@@ -1,131 +1,122 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react"
 
-import type {
-  AgentMessage,
-  AgentPlan,
-  AgentStage,
-} from "@/types/index";
-import { streamSSE } from "@/utils/sse-client";
+import type { AgentMessage, AgentPlan, AgentStage } from "@/types/index"
+import { streamSSE } from "@/utils/sse-client"
 
 interface UseAgentSessionReturn {
-  messages: AgentMessage[];
-  stage: AgentStage;
-  plan: AgentPlan | null;
-  loading: boolean;
-  error: string | null;
-  sendMessage: (message: string) => Promise<void>;
-  reset: () => void;
+  messages: AgentMessage[]
+  stage: AgentStage
+  plan: AgentPlan | null
+  sessionId: number | null
+  loading: boolean
+  error: string | null
+  start: () => Promise<void>
+  sendMessage: (message: string) => Promise<void>
+  abort: () => void
+  reset: () => void
 }
 
-export function useAgentSession(
-  goalId: number,
-): UseAgentSessionReturn {
-  const [messages, setMessages] = useState<AgentMessage[]>([]);
-  const [stage, setStage] = useState<AgentStage>("idle");
-  const [plan, setPlan] = useState<AgentPlan | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError"
+}
 
-  const sendMessage = useCallback(
-    async (message: string) => {
-      const content = message.trim();
+export function useAgentSession(goalId: number): UseAgentSessionReturn {
+  const [messages, setMessages] = useState<AgentMessage[]>([])
+  const [stage, setStage] = useState<AgentStage>("idle")
+  const [plan, setPlan] = useState<AgentPlan | null>(null)
+  const [sessionId, setSessionId] = useState<number | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const controllerRef = useRef<AbortController | null>(null)
+  const loadingRef = useRef(false)
 
-      if (!content || loading) {
-        return;
+  const appendAssistantDelta = useCallback((content: string) => {
+    setMessages((previous) => {
+      const last = previous[previous.length - 1]
+      if (last?.role === "assistant") {
+        return [...previous.slice(0, -1), { ...last, content: last.content + content }]
       }
+      return [...previous, { role: "assistant", content }]
+    })
+  }, [])
 
-      setError(null);
-      setLoading(true);
+  const consume = useCallback(
+    async (message: string, requestedSessionId: number | null) => {
+      if (loadingRef.current) return
 
-      // 用户消息立即显示
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "user",
-          content,
-        },
-      ]);
+      const controller = new AbortController()
+      controllerRef.current?.abort()
+      controllerRef.current = controller
+      loadingRef.current = true
+      setLoading(true)
+      setError(null)
 
       try {
-        const stream = streamSSE({
+        for await (const event of streamSSE({
           url: `/api/goals/${goalId}/agent/messages/stream`,
-          body: {
-            message: content,
-          },
-        });
-
-        for await (const event of stream) {
-          const data = JSON.parse(event.data);
-
+          body: { session_id: requestedSessionId, message },
+          signal: controller.signal,
+        })) {
           switch (event.event) {
             case "status":
-              setStage(data.stage);
-              break;
-
+              if (event.data.stage) setStage(event.data.stage as AgentStage)
+              break
             case "delta":
-              setMessages((prev) => [
-                ...prev,
-                {
-                  role: "assistant",
-                  content: data.content,
-                },
-              ]);
-              break;
-
+              appendAssistantDelta(event.data.content)
+              break
             case "plan_ready":
-              setStage(data.stage);
-              setPlan(data.plan);
-              break;
-
+              setSessionId(event.data.session_id)
+              setStage(event.data.stage as AgentStage)
+              setPlan(event.data.plan as AgentPlan)
+              break
             case "done":
-              setStage(data.stage);
-              break;
-
+              if (event.data.session_id) setSessionId(event.data.session_id)
+              if (event.data.stage) setStage(event.data.stage as AgentStage)
+              break
             case "error":
-              setError(data.message);
-              break;
-
-            default:
-              console.warn(
-                `未知 SSE event: ${event.event}`,
-                data,
-              );
+              setError(event.data.message)
+              return
           }
         }
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          return;
+      } catch (caught) {
+        if (!isAbortError(caught)) {
+          setError(caught instanceof Error ? caught.message : "发送失败，请稍后重试")
         }
-
-        console.error("Agent session error:", error);
-
-        setError(
-          error instanceof Error
-            ? error.message
-            : "发送失败，请稍后重试",
-        );
       } finally {
-        setLoading(false);
+        if (controllerRef.current === controller) controllerRef.current = null
+        loadingRef.current = false
+        setLoading(false)
       }
     },
-    [goalId, loading],
-  );
+    [appendAssistantDelta, goalId],
+  )
+
+  const start = useCallback(() => consume("", null), [consume])
+
+  const sendMessage = useCallback(
+    (message: string) => {
+      const content = message.trim()
+      if (!content || loadingRef.current) return Promise.resolve()
+      setMessages((previous) => [...previous, { role: "user", content }])
+      return consume(content, sessionId)
+    },
+    [consume, sessionId],
+  )
+
+  const abort = useCallback(() => controllerRef.current?.abort(), [])
 
   const reset = useCallback(() => {
-    setMessages([]);
-    setStage("idle");
-    setPlan(null);
-    setLoading(false);
-    setError(null);
-  }, []);
+    controllerRef.current?.abort()
+    setMessages([])
+    setStage("idle")
+    setPlan(null)
+    setSessionId(null)
+    setLoading(false)
+    setError(null)
+    loadingRef.current = false
+  }, [])
 
-  return {
-    messages,
-    stage,
-    plan,
-    loading,
-    error,
-    sendMessage,
-    reset,
-  };
+  useEffect(() => abort, [abort])
+
+  return { messages, stage, plan, sessionId, loading, error, start, sendMessage, abort, reset }
 }

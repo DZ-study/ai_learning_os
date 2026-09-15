@@ -1,8 +1,8 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.agent.session.models import AgentSession
-from app.modules.agent.session.schemas import AgentSessionCreateData
+from app.modules.agents.session.models import AgentSession
+from app.modules.agents.session.schemas import AgentSessionCreateData
 
 
 class AgentSessionRepository:

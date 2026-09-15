@@ -1,9 +1,13 @@
 import AgentSession from '@/components/ai/AgentSession'
 import type { Agent } from "@/types/goal"
 import {
-  type AssistantRuntime
+  useLocalRuntime,
+  type AssistantRuntime,
+  type ChatModelAdapter,
+  type ThreadMessageLike
 } from "@assistant-ui/react"
 import { ChevronDown, ChevronRight, ListChecks, Sparkles, Target, TrendingUp } from "lucide-react"
+import { useMemo, useState } from 'react'
 
 type GoalAgentProps = {
   agent: Agent | null
@@ -38,7 +42,66 @@ export function GoalPlan() {
   )
 }
 
-export default function GoalAgent({ agent, runtime, status }: GoalAgentProps) {
+export default function GoalAgent() {
+  const [agent, setAgent] = useState<Agent | null>(null)
+  const [sessionId, setSessionId] = useState<number | null>(null)
+
+  /*
+   * assistant-ui Adapter
+   *
+   * assistant-ui 不直接知道我们的 SSE。
+   * Adapter 负责把用户消息转换成 SSE 请求，
+   * 再把 SSE 数据转换成 assistant-ui 能理解的内容。
+   */
+  const adapter = useMemo<ChatModelAdapter>(() => {
+    if (!sessionId) {
+      return {
+        async *run() {
+          yield {
+            content: [
+              {
+                type: "text",
+                text: "正在启动…",
+              },
+            ],
+          }
+        },
+      }
+    }
+
+    return {
+      async *run({ messages }) {
+        const last = messages[messages.length - 1]
+
+        yield {
+          content: [
+            {
+              type: "text",
+              text: "开始你的学习之旅吧！",
+            },
+          ],
+        }
+      },
+    }
+  }, [sessionId])
+
+  /*
+   * Agent 启动后，后端可能已经返回第一条 Agent 消息。
+   * 将它作为 assistant-ui 的初始消息。
+   */
+  const initialMessages = useMemo<ThreadMessageLike[]>(() => {
+    return agent
+      ? [{
+        role: "assistant",
+        content: `${agent.message ?? ""}${agent.question ?? ""}`,
+      }] : []
+  }, [agent])
+
+  const runtime = useLocalRuntime(adapter, {
+    initialMessages,
+  })
+
+
   return <div className="flex h-full flex-col overflow-hidden border rounded-xl bg-background lg:flex-row">
     <main className="flex min-h-[34rem] min-w-0 flex-1 flex-col border-b lg:border-b-0 lg:border-r">
       <div className="flex items-center gap-3 border-b px-6 py-5">
@@ -46,7 +109,7 @@ export default function GoalAgent({ agent, runtime, status }: GoalAgentProps) {
           <Sparkles className="size-6" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">目标规划 Agent</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Tutor Agent</h1>
           <p className="text-sm text-muted-foreground">{agent ? status : "正在启动 Agent…"}</p>
         </div>
       </div>

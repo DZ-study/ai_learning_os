@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from collections.abc import AsyncIterator
@@ -9,14 +10,14 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.ai.service import LLMService
-from app.modules.agent.session.models import AgentSession
-from app.modules.agent.session.schemas import AgentSessionCreateData
-from app.modules.agent.session.service import AgentSessionService
-from app.modules.agent.workflow.goal_planning.graph import (
+from app.modules.agents.session.models import AgentSession
+from app.modules.agents.session.schemas import AgentSessionCreateData
+from app.modules.agents.session.service import AgentSessionService
+from app.modules.agents.workflow.goal_planning.graph import (
     GoalPlanState,
     build_goal_plan_graph,
 )
-from app.modules.agent.workflow.goal_planning.state import StudyPlan
+from app.modules.agents.workflow.goal_planning.state import StudyPlan
 from app.modules.goals.models import GoalPlan, GoalPlanItem, Goals
 from app.shared.exceptions import BadRequestException, NotFoundException
 
@@ -38,10 +39,23 @@ class GoalAgentService:
     async def message_stream(
         self, goal_id: int, user_id: int, request
     ) -> AsyncIterator[str]:
+        """Keep post-header failures inside the SSE protocol."""
+        try:
+            async for event in self._message_stream(goal_id, user_id, request):
+                yield event
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("goal agent stream failed, goal_id=%s", goal_id)
+            yield self._error("流式服务异常，请稍后重试", code="STREAM_ERROR")
+
+    async def _message_stream(
+        self, goal_id: int, user_id: int, request
+    ) -> AsyncIterator[str]:
         goal = await self.session.get(Goals, goal_id)
 
         if not goal or goal.user_id != user_id:
-            yield self._event("error", {"message": "目标不存在或无权访问"})
+            yield self._error("目标不存在或无权访问", code="GOAL_ACCESS_DENIED")
             return
 
         try:
@@ -55,11 +69,13 @@ class GoalAgentService:
                 ),
             )
         except ValueError:
-            yield self._event("error", {"message": "Agent 会话不存在或无权访问"})
+            yield self._error(
+                "Agent 会话不存在或无权访问", code="SESSION_ACCESS_DENIED"
+            )
             return
 
         if not agent_session:
-            yield self._event("error", {"message": "Agent 会话不存在"})
+            yield self._error("Agent 会话不存在", code="SESSION_NOT_FOUND")
             return
 
         await self.session.commit()  # 结束数据库操作，开始llm流式交互
@@ -145,11 +161,8 @@ class GoalAgentService:
             )
             await self.session.rollback()
 
-            yield self._event(
-                "error",
-                {
-                    "message": "生成学习计划失败，请稍后重试",
-                },
+            yield self._error(
+                "生成学习计划失败，请稍后重试", code="PLAN_GENERATION_FAILED"
             )
             return
 
@@ -181,10 +194,7 @@ class GoalAgentService:
 
             return
 
-        yield self._event(
-            "error",
-            {"message": "未知的执行结果"},
-        )
+        yield self._error("未知的执行结果", code="UNKNOWN_AGENT_RESULT")
 
     async def _handle_missing_info(
         self,
@@ -194,9 +204,8 @@ class GoalAgentService:
     ) -> AsyncIterator[str]:
 
         if not question:
-            yield self._event(
-                "error",
-                {"message": "生成追问失败，请稍后重试"},
+            yield self._error(
+                "生成追问失败，请稍后重试", code="QUESTION_GENERATION_FAILED"
             )
             return
 
@@ -243,10 +252,7 @@ class GoalAgentService:
     ) -> AsyncIterator[str]:
 
         if not plan:
-            yield self._event(
-                "error",
-                {"message": "计划结果为空，请稍后重试"},
-            )
+            yield self._error("计划结果为空，请稍后重试", code="EMPTY_PLAN")
             return
 
         messages = list(merged_context.get("messages", []))
@@ -281,10 +287,16 @@ class GoalAgentService:
     def _event(event_type: str, data: dict) -> str:
         return f"event: {event_type}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
+    @classmethod
+    def _error(cls, message: str, *, code: str) -> str:
+        return cls._event("error", {"code": code, "message": message})
+
     @staticmethod
     def _question(field: str) -> str:
         return {
-            "current_level": "你目前在这个目标上是什么水平？例如：零基础、了解基础、可以完成简单项目。",
+            "current_level": (
+                "你目前在这个目标上是什么水平？例如：零基础、了解基础、可以完成简单项目。"
+            ),
             "daily_minutes": "你平时每天大约能投入多少时间学习？",
             "learning_preference": "你更偏好视频、文章、项目实践，还是混合学习？",
         }[field]

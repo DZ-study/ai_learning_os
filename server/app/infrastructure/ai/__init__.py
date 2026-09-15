@@ -23,14 +23,11 @@
     ))
 """
 
-from app.infrastructure.ai.client import LLMClient, create_llm_client
 from app.infrastructure.ai.schemas import LLMRequest, LLMResponse, LLMUsage, Message
 from app.infrastructure.ai.service import LLMService
 
 __all__ = [
-    "LLMClient",
     "LLMService",
-    "create_llm_client",
     "LLMRequest",
     "LLMResponse",
     "LLMUsage",

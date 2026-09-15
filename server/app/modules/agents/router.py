@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
 from app.core.dependencies import get_current_user, get_goal_agent_service
-from app.modules.agent.schemas import AgentConfirmRequest, AgentReplyRequest
-from app.modules.agent.service import GoalAgentService
+from app.modules.agents.schemas import AgentConfirmRequest, AgentReplyRequest
+from app.modules.agents.service import GoalAgentService
 from app.modules.user.models import User
 
 router = APIRouter(prefix="/goals/{goal_id}/agent", tags=["Goal Agent"])

@@ -17,7 +17,7 @@ export const goalFormSchema = z.object({
   priority: z.enum(["low", "medium", "high"]).optional(),
   preferences: z.string().trim().optional(),
   constraints: z.string().trim().optional(),
-  level: z.string().optional(),
+  level: z.string().optional()
 })
 
 export type GoalFormValues = z.infer<typeof goalFormSchema>

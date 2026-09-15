@@ -1,6 +1,9 @@
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.infrastructure.ai.service import LLMService
+from app.modules.goals.models import Goals
 from app.modules.goals.repository import GoalRepository
 from app.modules.goals.schemas import (
     GoalCreate,
@@ -25,7 +28,11 @@ class GoalService:
         except Exception:
             await self.session.rollback()
             raise
-        return goal
+
+        result = await self.session.execute(
+            select(Goals).options(selectinload(Goals.plan)).where(Goals.id == goal.id)
+        )
+        return result.scalar_one()
 
     async def get_goals(self, user_id: int):
         result = await self._repository.get_all_by_user_id(user_id)

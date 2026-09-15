@@ -2,9 +2,9 @@ import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.agent.session.models import AgentSession
-from app.modules.agent.session.repository import AgentSessionRepository
-from app.modules.agent.session.schemas import AgentSessionCreateData
+from app.modules.agents.session.models import AgentSession
+from app.modules.agents.session.repository import AgentSessionRepository
+from app.modules.agents.session.schemas import AgentSessionCreateData
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,7 @@
 import logging
 
 from app.infrastructure.ai.model import get_chat_model
-from app.modules.agent.workflow.goal_planning.state import (
+from app.modules.agents.workflow.goal_planning.state import (
     GoalPlanState,
     InfoEvaluation,
     StudyPlan,

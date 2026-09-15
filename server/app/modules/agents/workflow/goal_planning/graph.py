@@ -2,12 +2,12 @@ from typing import Literal
 
 from langgraph.graph import END, START, StateGraph
 
-from app.modules.agent.workflow.goal_planning.nodes import (
+from app.modules.agents.workflow.goal_planning.nodes import (
     ask_question,
     evaluate_info,
     generate_plan,
 )
-from app.modules.agent.workflow.goal_planning.state import (
+from app.modules.agents.workflow.goal_planning.state import (
     GoalPlanState,
 )
 

@@ -62,9 +62,7 @@ class Goals(TimestampMixin, Base):
     user = relationship("User", back_populates="goals")
 
     plan = relationship(
-        "GoalPlan",
-        back_populates="goal",
-        uselist=False,
+        "GoalPlan", back_populates="goal", uselist=False, lazy="selectin"
     )
 
 

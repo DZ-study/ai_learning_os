@@ -2,16 +2,15 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infrastructure.ai.client import LLMClient, create_llm_client
 from app.infrastructure.ai.model import get_chat_model
 from app.infrastructure.ai.service import LLMService
 from app.infrastructure.email.client import EmailClient
 from app.infrastructure.email.service import EmailService
 from app.infrastructure.redis.client import redis_client
 from app.infrastructure.redis.service import RedisService
-from app.modules.agent.service import GoalAgentService
-from app.modules.agent.session.repository import AgentSessionRepository
-from app.modules.agent.session.service import AgentSessionService
+from app.modules.agents.service import GoalAgentService
+from app.modules.agents.session.repository import AgentSessionRepository
+from app.modules.agents.session.service import AgentSessionService
 from app.modules.auth.repository import AuthRepository
 from app.modules.auth.service import AuthService
 from app.modules.goals.repository import GoalRepository
@@ -20,6 +19,7 @@ from app.modules.user.models import User
 from app.modules.user.repository import UserRepository
 from app.modules.user.service import UserService
 from app.shared.exceptions import UnauthorizedException
+
 from .database.session import get_db
 from .security.jwt import decode_token
 
@@ -76,9 +76,9 @@ def get_user_service(session: AsyncSession = Depends(get_db)) -> UserService:
 
 
 # ── AI / LLM 依赖 ──────────────────────────────
-def get_llm_client() -> LLMClient:
-    """获取 LLMClient 单例。Provider 由 LLM_PROVIDER 环境变量决定。"""
-    return create_llm_client()
+# def get_llm_client() -> LLMClient:
+#     """获取 LLMClient 单例。Provider 由 LLM_PROVIDER 环境变量决定。"""
+#     return create_llm_client()
 
 
 def get_llm_service() -> LLMService:

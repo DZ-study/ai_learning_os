@@ -46,10 +46,10 @@ export default function GoalTable({
                 <TableCell><Tag label={priority.text} color={priority.color} /></TableCell>
                 <TableCell className="flex gap-2">
                   <Button variant="outline">详情</Button>
-                  {goal.plan && <Button variant="outline" onClick={() => onStart(goal.id)}>
+                  {/* {goal.plan && <Button variant="outline" onClick={() => onStart(goal.id)}>
                     开始学习
-                  </Button>}
-                  {goal.plan && goal.status === "draft" && <Button variant="outline">重新生成学习计划</Button>}
+                  </Button>} */}
+                  {goal.plan && goal.status === "draft" && <Button variant="default">重新生成学习计划</Button>}
                   {goal.status === "draft" && !goal.plan && <Button onClick={() => onGenerate(goal.id)}>生成学习计划</Button>}
                 </TableCell>
               </TableRow>
