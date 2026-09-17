@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { z } from "zod"
 
-// 静态 schema：错误 message 存 i18n key，展示时通过 t() 翻译
+// Keep i18n keys in the static schema and translate them at render time.
 const loginSchema = z.object({
   email: z
     .string()
@@ -46,7 +46,7 @@ export function useLogin() {
     defaultValues: { email: "", code: "" },
   })
 
-  // 发送验证码
+  // Send the verification code.
   async function handleSendCode() {
     setError(null)
     setLoading(true)
@@ -65,7 +65,7 @@ export function useLogin() {
     }
   }
 
-  // 验证码登录
+  // Log in with the verification code.
   async function handleLogin() {
     setError(null)
     setLoading(true)
@@ -87,7 +87,7 @@ export function useLogin() {
     }
   }
 
-  // 回到邮箱输入
+  // Return to email input.
   function handleBack() {
     setStep("email")
     setValue("code", "")
@@ -95,7 +95,7 @@ export function useLogin() {
     clearErrors()
   }
 
-  // 表单提交（仅校验当前步骤字段）
+  // Submit the form and validate only the current step.
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const field = step === "email" ? "email" : "code"

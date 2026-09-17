@@ -1,1 +1,1 @@
-// 目标详情
+// Goal details.

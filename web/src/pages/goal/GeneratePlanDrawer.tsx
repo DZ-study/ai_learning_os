@@ -15,6 +15,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import GoalAgentSession, { type TPlan } from './GoalAgentSession'
 import { goalKeys } from './queryKeys'
+import { useTranslation } from 'react-i18next'
 
 export default function GeneratePlanDrawer({
   goalId,
@@ -27,6 +28,7 @@ export default function GeneratePlanDrawer({
 }) {
 
   const [plan, setPlan] = useState<TPlan | null>(null)
+  const { t } = useTranslation()
 
   const queryClient = useQueryClient()
   const {
@@ -35,21 +37,21 @@ export default function GeneratePlanDrawer({
     mutationFn: ({ goalId, sessionId }: { goalId: number, sessionId: number }) =>
       generatePlan(goalId, sessionId),
     onSuccess: () => {
-      toast.success("计划已生成，可在详情页查看")
+      toast.success(t("goal.plan_generated"))
       onOpenChange(false)
-      queryClient.invalidateQueries({ // 更新目标状态
+      queryClient.invalidateQueries({ // Update goal status
         queryKey: goalKeys.list()
       })
     },
     onError: (error) => {
-      toast.error("计划生成失败")
+      toast.error(t("goal.plan_failed"))
       console.log(error)
     }
   })
 
   function handleGenerate() {
     if (!goalId || !plan) {
-      toast.warning("目标或计划不存在")
+      toast.warning(t("goal.missing_plan"))
       return
     }
     mutateAsync({
@@ -77,7 +79,7 @@ export default function GeneratePlanDrawer({
                 <Sparkles className="size-4" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight">目标规划 Agent</h1>
+                <h1 className="text-2xl font-bold tracking-tight">{t("goal.plan_title")}</h1>
                 <p className="text-sm text-muted-foreground"></p>
               </div>
             </div>
@@ -89,9 +91,9 @@ export default function GeneratePlanDrawer({
         </div>
         <DrawerFooter className="flex flex-row justify-end border-t pt-2">
           <DrawerClose render={<Button variant="ghost" />}>
-            取消
+            {t("common.cancel")}
           </DrawerClose>
-          <Button onClick={handleGenerate}>生成计划</Button>
+          <Button onClick={handleGenerate}>{t("goal.generate_plan")}</Button>
         </DrawerFooter>
       </DrawerContent>
     </Drawer >

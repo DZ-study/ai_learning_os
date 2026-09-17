@@ -1,18 +1,18 @@
-/** 后端统一响应格式 ApiResponse<T> */
+/** Unified backend response format ApiResponse<T>. */
 export interface ApiResponse<T> {
   code: number
   message: string
   data: T | null
 }
 
-/** 登录 / 刷新后返回的 token 数据 */
+/** Token data returned after login or refresh. */
 export interface TokenData {
   access_token: string
   refresh_token: string
   token_type: string
 }
 
-/** 用户个人信息 */
+/** User profile. */
 export interface UserProfile {
   id: number
   email: string
@@ -21,7 +21,7 @@ export interface UserProfile {
   created_at: string
 }
 
-/**用户登录信息 */
+/** User login information. */
 export interface User {
   id: number
   email: string
@@ -29,7 +29,7 @@ export interface User {
   avatar?: string | null
 }
 
-/**学习目标信息 */
+/** Learning goal information. */
 export interface Goal {
   id: number
   title: string

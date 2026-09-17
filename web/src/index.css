@@ -58,7 +58,7 @@
 
   --spacing: 0.3rem;
 
-  --sidebar-width-icon: 4rem;
+  --sidebar-width-icon: 4rem!important;
 }
 
 @theme inline {
@@ -147,5 +147,144 @@
   }
   html {
     @apply font-sans;
+  }
+
+  body {
+    min-width: 1024px;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .learning-space-shell {
+    display: grid;
+    grid-template-columns: 228px minmax(0, 1fr) 360px;
+    height: 100vh;
+    overflow: hidden;
+    background: #fbfaf8;
+    color: #303747;
+  }
+
+  .learning-sidebar {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    border-right: 1px solid #ebe8e5;
+    background: #faf9f7;
+  }
+
+  .learning-workspace {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    overflow: hidden;
+    background: #fbfaf8;
+  }
+
+  .chat-panel {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    border-left: 1px solid #e8e5e2;
+    background: #fcfbfa;
+  }
+
+  .workspace-surface {
+    background-color: #fbfaf8;
+    background-image: radial-gradient(circle, rgb(127 119 139 / 50%) 1.15px, transparent 1.3px);
+    background-position: 8px 8px;
+    background-size: 24px 24px;
+  }
+
+  .workspace-stage {
+    padding: 18px;
+  }
+
+  .course-card {
+    overflow: visible;
+    border: 1px solid #e5e0dc;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 12px 28px rgba(74, 64, 59, 0.06), 0 2px 5px rgba(74, 64, 59, 0.04);
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  }
+
+  .course-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 32px rgba(74, 64, 59, 0.1), 0 2px 5px rgba(74, 64, 59, 0.05);
+  }
+
+  .course-card-selected {
+    border-color: #9e8de2;
+    box-shadow: 0 0 0 3px rgba(154, 135, 228, 0.14), 0 16px 32px rgba(74, 64, 59, 0.09);
+  }
+
+  .course-cover {
+    position: relative;
+    height: 128px;
+    overflow: hidden;
+    border-radius: 14px 14px 0 0;
+    background: linear-gradient(135deg, #b9653e 0%, #8d4f55 49%, #51456e 100%);
+    padding: 14px 15px;
+  }
+
+  .book-mark {
+    display: flex;
+    height: 42px;
+    width: 42px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px 12px 12px 3px;
+    background: rgba(246, 202, 134, 0.84);
+    color: #87533e;
+    font-size: 20px;
+    transform: rotate(8deg);
+  }
+
+  .note-card {
+    min-height: 180px;
+    border: 1px solid rgba(172, 143, 61, 0.22);
+    background: #fff48f;
+    padding: 14px 16px 12px;
+    box-shadow: 5px 9px 16px rgba(113, 93, 42, 0.12);
+    transform: rotate(-3deg);
+    transition: transform 160ms ease, box-shadow 160ms ease;
+  }
+
+  .note-card:hover,
+  .note-card-selected {
+    transform: rotate(-1deg) translateY(-2px);
+    box-shadow: 7px 13px 21px rgba(113, 93, 42, 0.18);
+  }
+
+  .workspace-toolbar {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    border: 1px solid #e5e0dc;
+    border-radius: 13px;
+    background: rgba(255, 255, 255, 0.94);
+    padding: 5px;
+    box-shadow: 0 10px 24px rgba(58, 52, 47, 0.1);
+    transform: translateX(-50%);
+    backdrop-filter: blur(8px);
+  }
+
+  .chat-scroll {
+    scrollbar-color: #d7d2d0 transparent;
+    scrollbar-width: thin;
+  }
+}
+
+@media (max-width: 1150px) {
+  .learning-space-shell {
+    grid-template-columns: 205px minmax(0, 1fr) 330px;
   }
 }

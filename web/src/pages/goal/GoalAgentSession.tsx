@@ -3,6 +3,7 @@ import { useAgentSession } from "@/hooks/useAgentSession"
 import type { AgentStage } from "@/types/index"
 import { Send, Sparkles } from "lucide-react"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 export type TPlan = {
   stage: string
@@ -11,10 +12,10 @@ export type TPlan = {
 }
 
 const stageLabels: Record<AgentStage, string> = {
-  idle: "准备中",
-  analyzing: "正在分析",
-  collecting_info: "等待你的回答",
-  awaiting_plan_confirmation: "等待确认计划",
+  idle: "agent.stage.idle",
+  analyzing: "agent.stage.analyzing",
+  collecting_info: "agent.stage.collecting_info",
+  awaiting_plan_confirmation: "agent.stage.awaiting_plan_confirmation",
 }
 
 export default function GoalAgentSession({
@@ -25,6 +26,7 @@ export default function GoalAgentSession({
   onGetPlan: (plan: TPlan) => void
 }) {
   const [draft, setDraft] = useState("")
+  const { t } = useTranslation()
   const session = useAgentSession(goalId ?? 0)
   const { start } = session
 
@@ -57,8 +59,8 @@ export default function GoalAgentSession({
           <Sparkles size={16} />
         </div>
         <div>
-          <p className="font-medium">目标规划 Agent</p>
-          <p className="text-xs text-muted-foreground">{stageLabels[session.stage]}</p>
+          <p className="font-medium">{t("agent.planning")}</p>
+          <p className="text-xs text-muted-foreground">{t(stageLabels[session.stage])}</p>
         </div>
       </div>
 
@@ -91,11 +93,11 @@ export default function GoalAgentSession({
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           disabled={session.loading || !goalId}
-          placeholder="输入你的回答…"
+          placeholder={t("agent.input_placeholder")}
           className="min-h-10 flex-1 resize-none bg-transparent px-3 py-2 text-sm outline-none"
           rows={2}
         />
-        <Button type="submit" size="icon" aria-label="发送" disabled={session.loading || !draft.trim()}>
+        <Button type="submit" size="icon" aria-label={t("common.send")} disabled={session.loading || !draft.trim()}>
           <Send size={16} />
         </Button>
       </form>

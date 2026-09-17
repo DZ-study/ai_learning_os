@@ -1,6 +1,6 @@
-/* 常量数据*/
+/* Shared constants */
 
-// 菜单项
+// Navigation items
 export const NAV_ITEMS = [
   { to: "/", label: "Home", icon: "" },
   { to: "/goals", label: "Goals", icon: "" },
@@ -10,19 +10,19 @@ export const NAV_ITEMS = [
 ]
 
 
-// 目标状态
+// Goal status translation keys
 export const GOAL_STATUS = {
-  draft: "未开始",
-  active: "进行中",
-  paused: "暂停",
-  completed: "已完成",
-  archived: "归档",
+  draft: "goal.status.draft",
+  active: "goal.status.active",
+  paused: "goal.status.paused",
+  completed: "goal.status.completed",
+  archived: "goal.status.archived",
 }
 
 
-// 目标优先级
+// Goal priority translation keys
 export const GOAL_PRIORITY = {
-  low: { text: "低", color: "gray" },
-  medium: { text: "中", color: "green" },
-  high: { text: "高", color: "red" },
+  low: { text: "goal.priority.low", color: "gray" },
+  medium: { text: "goal.priority.medium", color: "green" },
+  high: { text: "goal.priority.high", color: "red" },
 }

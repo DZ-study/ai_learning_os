@@ -17,7 +17,7 @@ function App() {
   }, [fetchUser])
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen h-[100vh] bg-background">
       <QueryClientProvider client={queryClient}>
         <Outlet />
         <Toaster />

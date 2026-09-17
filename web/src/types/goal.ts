@@ -4,16 +4,16 @@ export const goalFormSchema = z.object({
   title: z
     .string()
     .trim()
-    .min(2, { error: "目标标题至少需要 2 个字符" })
-    .max(255, { error: "目标标题不能超过 255 个字符" }),
+    .min(2, { error: "goal.validation.title_min" })
+    .max(255, { error: "goal.validation.title_max" }),
 
   description: z
     .string()
     .trim()
-    .min(10, "请至少描述 10 个字符，帮助 AI 理解你的目标"),
+    .min(10, "goal.validation.description_min"),
 
-  duration: z.number({ error: "目标时长不能为空" }).min(1, "目标时长至少为 1 天"),
-  availableTime: z.string().trim().max(255, "不能超过 255 个字符").optional(),
+  duration: z.number({ error: "goal.validation.duration_required" }).min(1, "goal.validation.duration_min"),
+  availableTime: z.string().trim().max(255, "goal.validation.available_time_max").optional(),
   priority: z.enum(["low", "medium", "high"]).optional(),
   preferences: z.string().trim().optional(),
   constraints: z.string().trim().optional(),
@@ -40,8 +40,8 @@ export type Agent = {
 
 export interface GoalListShow {
   data: Goal[],
-  onStart: (id: number) => void
-  onGenerate: (id: number | null) => void
+  onStart?: (id: number) => void
+  onGenerate?: (id: number | null) => void
 }
 
 export type GoalTableProps = GoalListShow

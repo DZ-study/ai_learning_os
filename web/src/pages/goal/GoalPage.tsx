@@ -5,6 +5,7 @@ import AddGoalDrawer from "@/pages/goal/AddGoalDrawer"
 import { getGoals } from '@/services/goal'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import GeneratePlanDrawer from './GeneratePlanDrawer'
 import GoalCard from './GoalCard'
@@ -19,6 +20,7 @@ export default function GoalPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("list")
   const [goalId, setGoalId] = useState<number | null>(null)
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const { data: goals } = useQuery({
     queryKey: goalKeys.list(),
@@ -29,13 +31,13 @@ export default function GoalPage() {
     setShowAddGoal(true)
   }
 
-  // 开始学习
+  // Start learning
   const handleStart = (goalId: number) => {
-    // TODO: 后台目标状态校验和修改
+    // TODO: validate and update the goal status on the server
     navigate(`/goals/${goalId}/agent`)
   }
 
-  // 生成学习计划
+  // Generate a learning plan
   const handleGenerate = (id: number | null) => {
     setGoalId(id)
     setShowGeneratePlan(true)
@@ -43,16 +45,16 @@ export default function GoalPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">学习目标</h1>
+      <h1 className="text-2xl font-bold mb-4">{t("goal.page_title")}</h1>
       <p className="text-muted-foreground mb-4">
-        管理您的学习目标，跟踪目标学习进度。
+        {t("goal.page_description")}
       </p>
       <div className="flex justify-between mb-4">
         <ViewSwitcher
           value={viewMode}
           onChange={setViewMode}
         />
-        <Button onClick={handleOpen}>添加学习目标</Button>
+        <Button onClick={handleOpen}>{t("goal.add_button")}</Button>
       </div>
       {viewMode === "list" && <GoalTable data={goals ?? []} onStart={handleStart} onGenerate={handleGenerate} />}
       {viewMode === "card" && <GoalCard data={goals ?? []} onStart={handleStart} onGenerate={handleGenerate} />}

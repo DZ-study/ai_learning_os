@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/input-group"
 import { goalFormSchema, type GoalFormValues } from '@/types/goal'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 
 export type GoalFormRef = {
   submit: () => void
@@ -28,13 +29,14 @@ type GoalFormProps = {
 }
 
 const priorityOptions = [
-  { value: "low", label: "低" },
-  { value: "medium", label: "中" },
-  { value: "high", label: "高" },
+  { value: "low", label: "goal.priority.low" },
+  { value: "medium", label: "goal.priority.medium" },
+  { value: "high", label: "goal.priority.high" },
 ] as const
 
 const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
   ({ onSubmit }, ref) => {
+    const { t } = useTranslation()
     const form = useForm<GoalFormValues>({
       resolver: zodResolver(goalFormSchema),
       defaultValues: {
@@ -51,7 +53,7 @@ const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
     React.useImperativeHandle(ref, () => ({
       submit: () => {
         console.log("submit", form.getValues())
-        // 会先执行 Zod 校验；失败时自动显示 FieldError
+        // Zod validation runs before submit and FieldError renders failures.
         void form.handleSubmit(onSubmit)()
       },
       reset: () => form.reset(),
@@ -60,7 +62,7 @@ const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
     return (
       <form onSubmit={form.handleSubmit(onSubmit)} className="mx-auto max-w-3xl">
         <FieldGroup className="gap-6">
-          {/* 短字段：两列布局 */}
+          {/* Short fields: two-column layout */}
           <div className="grid gap-6 md:grid-cols-2">
             <Controller
               control={form.control}
@@ -68,16 +70,16 @@ const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor="goal-title">
-                    目标标题 <span className="text-destructive">*</span>
+                    {t("goal.form.title")} <span className="text-destructive">*</span>
                   </FieldLabel>
                   <Input
                     {...field}
                     id="goal-title"
-                    placeholder="例如：独立完成一个 React 项目"
+                    placeholder={t("goal.form.title_placeholder")}
                     aria-invalid={fieldState.invalid}
                   />
                   {fieldState.error && (
-                    <FieldError errors={[fieldState.error]} />
+                    <FieldError errors={fieldState.error ? [{ message: t(fieldState.error.message ?? "") }] : []} />
                   )}
                 </Field>
               )}
@@ -88,23 +90,23 @@ const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor="goal-duration">
-                    期望完成时长
+                    {t("goal.form.duration")}
                   </FieldLabel>
                   <Input
                     {...field}
                     id="goal-duration"
                     type="number"
                     min={1}
-                    placeholder="例如：3"
+                    placeholder={t("goal.form.duration_placeholder")}
                     aria-invalid={fieldState.invalid}
                     onChange={(e) => field.onChange(e.target.valueAsNumber)}
                   />
 
                   {fieldState.error && (
-                    <FieldError errors={[fieldState.error]} />
+                    <FieldError errors={fieldState.error ? [{ message: t(fieldState.error.message ?? "") }] : []} />
                   )}
                   <FieldDescription>
-                    以天为单位
+                    {t("goal.duration_unit")}
                   </FieldDescription>
                 </Field>
               )}
@@ -115,16 +117,16 @@ const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor="goal-available-time">
-                    每日可投入时间(h)
+                    {t("goal.form.available_time")}
                   </FieldLabel>
                   <Input
                     {...field}
                     id="goal-available-time"
-                    placeholder="例如：工作日每天 1 小时"
+                    placeholder={t("goal.form.available_time_placeholder")}
                     aria-invalid={fieldState.invalid}
                   />
                   {fieldState.error && (
-                    <FieldError errors={[fieldState.error]} />
+                    <FieldError errors={fieldState.error ? [{ message: t(fieldState.error.message ?? "") }] : []} />
                   )}
                 </Field>
               )}
@@ -135,7 +137,7 @@ const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
               name="priority"
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="goal-priority">优先级</FieldLabel>
+                  <FieldLabel htmlFor="goal-priority">{t("goal.form.priority")}</FieldLabel>
                   <select
                     id="goal-priority"
                     value={field.value ?? ""}
@@ -148,50 +150,50 @@ const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
                     aria-invalid={fieldState.invalid}
                     className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <option value="">暂不设置</option>
+                    <option value="">{t("goal.form.priority_unset")}</option>
                     {priorityOptions.map((option) => (
                       <option key={option.value} value={option.value}>
-                        {option.label}
+                        {t(option.label)}
                       </option>
                     ))}
                   </select>
 
                   {fieldState.error && (
-                    <FieldError errors={[fieldState.error]} />
+                    <FieldError errors={fieldState.error ? [{ message: t(fieldState.error.message ?? "") }] : []} />
                   )}
                 </Field>
               )}
             />
           </div>
 
-          {/* 长字段：单列布局 */}
+          {/* Long fields: single-column layout */}
           <Controller
             control={form.control}
             name="description"
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor="goal-description">
-                  详细描述 <span className="text-destructive">*</span>
+                  {t("goal.form.description")} <span className="text-destructive">*</span>
                 </FieldLabel>
                 <InputGroup>
                   <InputGroupTextarea
                     {...field}
                     id="goal-description"
                     rows={6}
-                    placeholder="告诉 AI：你想达成什么、目前基础如何、为什么想做，以及你担心或希望避免什么。"
+                    placeholder={t("goal.form.description_placeholder")}
                     aria-invalid={fieldState.invalid}
                   />
                   <InputGroupAddon align="block-end">
                     <InputGroupText>
-                      {field.value?.length ?? 0} 个字符
+                      {t("common.character_count", { count: field.value?.length ?? 0 })}
                     </InputGroupText>
                   </InputGroupAddon>
                 </InputGroup>
                 <FieldDescription>
-                  保留你的原始表达，AI 会据此理解并生成计划。
+                  {t("goal.form.description_hint")}
                 </FieldDescription>
                 {fieldState.error && (
-                  <FieldError errors={[fieldState.error]} />
+                  <FieldError errors={fieldState.error ? [{ message: t(fieldState.error.message ?? "") }] : []} />
                 )}
               </Field>
             )}
@@ -202,18 +204,18 @@ const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
             name="preferences"
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="goal-preferences">偏好</FieldLabel>
+                  <FieldLabel htmlFor="goal-preferences">{t("goal.form.preferences")}</FieldLabel>
                 <InputGroup>
                   <InputGroupTextarea
                     {...field}
                     id="goal-preferences"
                     rows={3}
-                    placeholder="例如：希望项目驱动学习，不喜欢纯看视频"
+                    placeholder={t("goal.form.preferences_placeholder")}
                     aria-invalid={fieldState.invalid}
                   />
                 </InputGroup>
                 {fieldState.error && (
-                  <FieldError errors={[fieldState.error]} />
+                  <FieldError errors={fieldState.error ? [{ message: t(fieldState.error.message ?? "") }] : []} />
                 )}
               </Field>
             )}
@@ -224,18 +226,18 @@ const GoalCreateForm = React.forwardRef<GoalFormRef, GoalFormProps>(
             name="constraints"
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="goal-constraints">限制条件</FieldLabel>
+                  <FieldLabel htmlFor="goal-constraints">{t("goal.form.constraints")}</FieldLabel>
                 <InputGroup>
                   <InputGroupTextarea
                     {...field}
                     id="goal-constraints"
                     rows={3}
-                    placeholder="例如：预算有限，只能在晚上学习"
+                    placeholder={t("goal.form.constraints_placeholder")}
                     aria-invalid={fieldState.invalid}
                   />
                 </InputGroup>
                 {fieldState.error && (
-                  <FieldError errors={[fieldState.error]} />
+                  <FieldError errors={fieldState.error ? [{ message: t(fieldState.error.message ?? "") }] : []} />
                 )}
               </Field>
             )}

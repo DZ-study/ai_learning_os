@@ -66,7 +66,7 @@ export async function* streamSSE({
 
   if (!response.ok) {
     const body = await response.text().catch(() => "")
-    let message = body || `SSE 请求失败（${response.status}）`
+    let message = body || i18next.t("sse.request_failed", { status: response.status })
     try {
       const parsed: unknown = JSON.parse(body)
       if (typeof parsed === "object" && parsed !== null && "message" in parsed) {
@@ -80,7 +80,7 @@ export async function* streamSSE({
   }
 
   if (!response.body) {
-    throw new SSEClientError("浏览器不支持 ReadableStream")
+    throw new SSEClientError(i18next.t("sse.stream_unsupported"))
   }
 
   const reader = response.body.getReader();
@@ -103,18 +103,18 @@ export async function* streamSSE({
         const event = events.shift()!
         const eventType = event.event
         if (!eventType || !(eventType in eventSchemas)) {
-          throw new SSEClientError(`不支持的 SSE 事件：${eventType || "(空)"}`)
+          throw new SSEClientError(i18next.t("sse.event_unsupported", { event: eventType || i18next.t("sse.empty_event") }))
         }
         let data: unknown
         try {
           data = JSON.parse(event.data)
         } catch {
-          throw new SSEClientError(`SSE 事件数据不是合法 JSON：${eventType}`)
+          throw new SSEClientError(i18next.t("sse.invalid_json", { event: eventType }))
         }
         const typedEvent = eventType as SSEEventType
         const result = eventSchemas[typedEvent].safeParse(data)
         if (!result.success) {
-          throw new SSEClientError(`SSE 事件数据格式错误：${typedEvent}`)
+          throw new SSEClientError(i18next.t("sse.invalid_data", { event: typedEvent }))
         }
         yield { event: typedEvent, data: result.data } as SSEEvent
       }
@@ -125,18 +125,18 @@ export async function* streamSSE({
       const event = events.shift()!
       const eventType = event.event
       if (!eventType || !(eventType in eventSchemas)) {
-        throw new SSEClientError(`不支持的 SSE 事件：${eventType || "(空)"}`)
+        throw new SSEClientError(i18next.t("sse.event_unsupported", { event: eventType || i18next.t("sse.empty_event") }))
       }
       let data: unknown
       try {
         data = JSON.parse(event.data)
       } catch {
-        throw new SSEClientError(`SSE 事件数据不是合法 JSON：${eventType}`)
+        throw new SSEClientError(i18next.t("sse.invalid_json", { event: eventType }))
       }
       const typedEvent = eventType as SSEEventType
       const result = eventSchemas[typedEvent].safeParse(data)
       if (!result.success) {
-        throw new SSEClientError(`SSE 事件数据格式错误：${typedEvent}`)
+        throw new SSEClientError(i18next.t("sse.invalid_data", { event: typedEvent }))
       }
       yield { event: typedEvent, data: result.data } as SSEEvent
     }
@@ -144,3 +144,4 @@ export async function* streamSSE({
     reader.releaseLock()
   }
 }
+import i18next from "@/i18n"

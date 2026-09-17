@@ -10,21 +10,20 @@ export const useCurrentModule = () => {
   const pathname = location.pathname
   const { getCurrentGoal } = useGoalStore()
 
-  // 1. 优先匹配动态路由 /goals/:id/...
+  // 1. Prefer dynamic /goals/:id/... routes.
   const goalMatch = pathname.match(/^\/goals\/([^/]+)(\/.*)?$/)
   if (goalMatch) {
-    // 这里可以返回一个通用的“我的目标”文案，
-    // 或者根据 goalMatch[1] 去查具体的目标名称（如果需要更高级的功能）
+    // Use a generic label here; the current goal can be resolved from the store.
     const currentGoal = getCurrentGoal()
     const label = currentGoal ? `${t("menu.my_goals")} > ${currentGoal.title}` : t("menu.my_goals")
     return {
-      label, // 例如: "我的目标" 或 "My Goals"
+      label,
       isDynamic: true,
       id: goalMatch[1]
     }
   }
 
-  // 2. 匹配静态路由
+  // 2. Match static routes.
   const matchedStatic = menuItems.find((item) => {
     if (item.exact) return pathname === item.path
     return pathname.startsWith(item.path)
@@ -39,6 +38,6 @@ export const useCurrentModule = () => {
     }
   }
 
-  // 3. 兜底
+  // 3. Fallback.
   return { label: '', isDynamic: false }
 }

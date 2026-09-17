@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react"
 
 import { streamSSE, type SSEEvent } from "@/utils/sse-client"
+import i18next from "@/i18n"
 
 type AIStreamOptions = {
   url: string
@@ -34,19 +35,19 @@ const formatPlan = (plan: Plan | null): string => {
       const tasks = (milestone.tasks ?? [])
         .map(
           (task) =>
-            `- **${task.title ?? "未命名任务"}**：${task.description ?? ""}（${task.estimated_minutes ?? 0}分钟）`,
+            `- **${task.title ?? i18next.t("agent.unnamed_task", { defaultValue: "Unnamed task" })}**: ${task.description ?? ""} (${task.estimated_minutes ?? 0} min)`,
         )
         .join("\n")
 
       return [
-        `### ${index + 1}. ${milestone.title ?? "未命名阶段"}`,
+        `### ${index + 1}. ${milestone.title ?? i18next.t("agent.unnamed_stage", { defaultValue: "Unnamed stage" })}`,
         milestone.objective ?? "",
         tasks,
       ].join("\n\n")
     })
     .join("\n\n")
 
-  return [plan.summary ? `**学习计划**\n\n${plan.summary}` : "", milestones]
+  return [plan.summary ? `**${i18next.t("goal.generate_plan")}**\n\n${plan.summary}` : "", milestones]
     .filter(Boolean)
     .join("\n\n")
 }
@@ -92,7 +93,7 @@ const useAIStream = () => {
             case "plan_ready":
               setStage(event.data.stage)
               setPlan(event.data.plan as Plan)
-              setStatus("计划已生成，等待确认")
+              setStatus(i18next.t("agent.plan_ready"))
               text = formatPlan(event.data.plan)
               break
             case "done":
@@ -110,7 +111,7 @@ const useAIStream = () => {
         }
       } catch (caught) {
         if (!(caught instanceof DOMException && caught.name === "AbortError")) {
-          const message = caught instanceof Error ? caught.message : "流式请求失败"
+          const message = caught instanceof Error ? caught.message : i18next.t("error.stream_failed")
           setError(message)
           throw caught
         }

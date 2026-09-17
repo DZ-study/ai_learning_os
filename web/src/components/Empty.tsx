@@ -1,15 +1,17 @@
 import { cn } from "@/lib/utils"
 import { InboxIcon } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 interface EmptyProps {
-  /** 提示文案 */
+  /** Empty-state message */
   title?: string
-  /** 自定义图标，默认使用收件箱图标 */
+  /** Optional icon; the inbox icon is used by default. */
   icon?: React.ReactNode
   className?: string
 }
 
-export default function Empty({ title = "暂无数据", icon, className }: EmptyProps) {
+export default function Empty({ title, icon, className }: EmptyProps) {
+  const { t } = useTranslation()
   return (
     <div
       className={cn(
@@ -20,7 +22,7 @@ export default function Empty({ title = "暂无数据", icon, className }: Empty
       <div className="flex size-12 items-center justify-center rounded-full bg-muted">
         {icon ?? <InboxIcon className="size-5" />}
       </div>
-      <p className="text-sm">{title}</p>
+      <p className="text-sm">{title ?? t("common.empty")}</p>
     </div>
   )
 }

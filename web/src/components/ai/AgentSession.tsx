@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button'
 import { AssistantRuntimeProvider, ComposerPrimitive, MessagePrimitive, ThreadPrimitive, type AssistantRuntime } from '@assistant-ui/react'
 import { Send, Sparkles } from 'lucide-react'
 import type { Component } from 'react'
+import { useTranslation } from 'react-i18next'
 
 type AgentType = "goal_planning" | "tutor"
 
@@ -20,6 +21,7 @@ function AgentSession({
   stage,
   runtime,
 }: AgentSessionProps) {
+  const { t } = useTranslation()
 
   const canConfirmPlan =
     stage === "awaiting_plan_confirmation"
@@ -44,12 +46,12 @@ function AgentSession({
                 </MessagePrimitive.Root>
               ),
             }} />
-            {canConfirmPlan && <div className="flex justify-end"><Button size="lg" className="cursor-pointer">确认计划</Button></div>}
+            {canConfirmPlan && <div className="flex justify-end"><Button size="lg" className="cursor-pointer">{t("agent.confirm_plan")}</Button></div>}
             <ThreadPrimitive.ScrollToBottom />
           </ThreadPrimitive.Viewport>
           <ComposerPrimitive.Root className="m-4 flex items-end gap-2 rounded-xl border bg-background p-2 shadow-sm sm:m-6">
-            <ComposerPrimitive.Input autoFocus placeholder="输入你的回答…" className="min-h-10 flex-1 resize-none bg-transparent px-3 py-2 text-sm outline-none" />
-            <ComposerPrimitive.Send asChild><Button size="icon" aria-label="发送"><Send size={16} /></Button></ComposerPrimitive.Send>
+            <ComposerPrimitive.Input autoFocus placeholder={t("agent.input_placeholder")} className="min-h-10 flex-1 resize-none bg-transparent px-3 py-2 text-sm outline-none" />
+            <ComposerPrimitive.Send asChild><Button size="icon" aria-label={t("common.send")}><Send size={16} /></Button></ComposerPrimitive.Send>
           </ComposerPrimitive.Root>
         </ThreadPrimitive.Root>
       </AssistantRuntimeProvider>

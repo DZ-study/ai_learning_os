@@ -8,6 +8,7 @@ import {
 } from "@assistant-ui/react"
 import { ChevronDown, ChevronRight, ListChecks, Sparkles, Target, TrendingUp } from "lucide-react"
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 type GoalAgentProps = {
   agent: Agent | null
@@ -16,29 +17,32 @@ type GoalAgentProps = {
 }
 
 export function CurrentProgress({ progress = 65 }: { progress?: number }) {
+  const { t } = useTranslation()
   return (
     <section className="rounded-xl border bg-card p-5 shadow-sm">
-      <div className="mb-4 flex items-center justify-between"><h2 className="flex items-center gap-2 text-lg font-semibold"><TrendingUp className="size-5 text-primary" />当前目标进度</h2><span className="font-semibold text-primary">{progress}%</span></div>
+      <div className="mb-4 flex items-center justify-between"><h2 className="flex items-center gap-2 text-lg font-semibold"><TrendingUp className="size-5 text-primary" />{t("agent.progress")}</h2><span className="font-semibold text-primary">{progress}%</span></div>
       <div className="mb-5 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} /></div>
-      <p className="text-sm leading-6 text-muted-foreground">你正在稳步掌握 React。最近对组件生命周期的专注学习巩固了你的理解，下一项重要里程碑是状态管理。</p>
+      <p className="text-sm leading-6 text-muted-foreground">{t("agent.progress_description")}</p>
     </section>
   )
 }
 
 export function TodayTasks() {
+  const { t } = useTranslation()
   const tasks = [
-    { label: "阅读 React 文档：自定义 Hooks", done: false },
-    { label: "编码 2 小时：重构购物车组件", done: false },
-    { label: "观看教程：Context API 与 Redux", done: true },
+    { label: t("agent.tasks.read_hooks"), done: false },
+    { label: t("agent.tasks.refactor_cart"), done: false },
+    { label: t("agent.tasks.watch_context"), done: true },
   ]
   return (
-    <section className="rounded-xl border bg-card p-5 shadow-sm"><h2 className="mb-5 flex items-center gap-2 text-lg font-semibold"><ListChecks className="size-5" />今日任务</h2><div className="space-y-4">{tasks.map((task) => <label key={task.label} className="flex cursor-pointer items-start gap-3 text-sm leading-6"><input type="checkbox" defaultChecked={task.done} className="mt-1 size-4 accent-primary" /><span className={task.done ? "text-muted-foreground line-through" : ""}>{task.label}</span></label>)}</div></section>
+    <section className="rounded-xl border bg-card p-5 shadow-sm"><h2 className="mb-5 flex items-center gap-2 text-lg font-semibold"><ListChecks className="size-5" />{t("agent.today_tasks")}</h2><div className="space-y-4">{tasks.map((task) => <label key={task.label} className="flex cursor-pointer items-start gap-3 text-sm leading-6"><input type="checkbox" defaultChecked={task.done} className="mt-1 size-4 accent-primary" /><span className={task.done ? "text-muted-foreground line-through" : ""}>{task.label}</span></label>)}</div></section>
   )
 }
 
 export function GoalPlan() {
+  const { t } = useTranslation()
   return (
-    <section className="rounded-xl border bg-card p-5 shadow-sm"><h2 className="mb-5 flex items-center gap-2 text-lg font-semibold"><Target className="size-5" />目标计划</h2><div className="space-y-1 text-sm"><div className="flex items-center justify-between border-b py-3 font-medium"><span className="flex items-center gap-2"><ChevronRight className="size-4" />模块 1：基础</span><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary">已完成</span></div><div className="border-b py-3"><div className="flex items-center justify-between font-medium"><span className="flex items-center gap-2"><ChevronDown className="size-4" />模块 2：深入学习</span><span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">当前</span></div><ul className="ml-7 mt-3 list-disc space-y-2 text-muted-foreground"><li>深入理解 Hooks</li><li>Context API</li><li>性能优化</li></ul></div><div className="flex items-center justify-between py-3 font-medium"><span className="flex items-center gap-2"><ChevronRight className="size-4" />模块 3：生态</span><span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">即将开始</span></div></div></section>
+    <section className="rounded-xl border bg-card p-5 shadow-sm"><h2 className="mb-5 flex items-center gap-2 text-lg font-semibold"><Target className="size-5" />{t("agent.goal_plan")}</h2><div className="space-y-1 text-sm"><div className="flex items-center justify-between border-b py-3 font-medium"><span className="flex items-center gap-2"><ChevronRight className="size-4" />{t("agent.modules.foundation")}</span><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary">{t("agent.modules.completed")}</span></div><div className="border-b py-3"><div className="flex items-center justify-between font-medium"><span className="flex items-center gap-2"><ChevronDown className="size-4" />{t("agent.modules.deep_dive")}</span><span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">{t("agent.modules.current")}</span></div><ul className="ml-7 mt-3 list-disc space-y-2 text-muted-foreground"><li>{t("agent.modules.hooks")}</li><li>{t("agent.modules.context")}</li><li>{t("agent.modules.performance")}</li></ul></div><div className="flex items-center justify-between py-3 font-medium"><span className="flex items-center gap-2"><ChevronRight className="size-4" />{t("agent.modules.ecosystem")}</span><span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">{t("agent.modules.upcoming")}</span></div></div></section>
   )
 }
 
@@ -49,9 +53,7 @@ export default function GoalAgent() {
   /*
    * assistant-ui Adapter
    *
-   * assistant-ui 不直接知道我们的 SSE。
-   * Adapter 负责把用户消息转换成 SSE 请求，
-   * 再把 SSE 数据转换成 assistant-ui 能理解的内容。
+   * The assistant-ui adapter bridges our SSE endpoint and the chat runtime.
    */
   const adapter = useMemo<ChatModelAdapter>(() => {
     if (!sessionId) {
@@ -61,7 +63,7 @@ export default function GoalAgent() {
             content: [
               {
                 type: "text",
-                text: "正在启动…",
+                text: t("agent.starting"),
               },
             ],
           }
@@ -77,7 +79,7 @@ export default function GoalAgent() {
           content: [
             {
               type: "text",
-              text: "开始你的学习之旅吧！",
+              text: t("agent.start_learning"),
             },
           ],
         }
@@ -86,8 +88,7 @@ export default function GoalAgent() {
   }, [sessionId])
 
   /*
-   * Agent 启动后，后端可能已经返回第一条 Agent 消息。
-   * 将它作为 assistant-ui 的初始消息。
+   * The backend may return the first agent message during startup.
    */
   const initialMessages = useMemo<ThreadMessageLike[]>(() => {
     return agent
@@ -109,8 +110,8 @@ export default function GoalAgent() {
           <Sparkles className="size-6" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Tutor Agent</h1>
-          <p className="text-sm text-muted-foreground">{agent ? status : "正在启动 Agent…"}</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("agent.tutor")}</h1>
+          <p className="text-sm text-muted-foreground">{agent ? status : t("agent.starting_agent")}</p>
         </div>
       </div>
       <AgentSession sessionId={1} agentType='tutor' runtime={runtime} />

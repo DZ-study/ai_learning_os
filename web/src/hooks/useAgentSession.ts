@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 
+import i18next from "@/i18n"
 import type { AgentMessage, AgentPlan, AgentStage } from "@/types/index"
 import { streamSSE } from "@/utils/sse-client"
 
@@ -20,7 +21,7 @@ function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError"
 }
 
-export function useAgentSession(goalId: number): UseAgentSessionReturn {
+export function useAgentSession(goalId?: number): UseAgentSessionReturn {
   const [messages, setMessages] = useState<AgentMessage[]>([])
   const [stage, setStage] = useState<AgentStage>("idle")
   const [plan, setPlan] = useState<AgentPlan | null>(null)
@@ -80,7 +81,7 @@ export function useAgentSession(goalId: number): UseAgentSessionReturn {
         }
       } catch (caught) {
         if (!isAbortError(caught)) {
-          setError(caught instanceof Error ? caught.message : "发送失败，请稍后重试")
+          setError(caught instanceof Error ? caught.message : i18next.t("error.send_message_failed"))
         }
       } finally {
         if (controllerRef.current === controller) controllerRef.current = null

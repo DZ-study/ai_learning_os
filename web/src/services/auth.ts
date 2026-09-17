@@ -8,7 +8,7 @@ interface ServiceResult<T = unknown> {
 }
 
 export const authService = {
-  /** 发送验证码 */
+  /** Send a verification code. */
   async sendCode(email: string): Promise<ServiceResult<{ email: string }>> {
     const { data } = await api.post<ApiResponse<{ email: string }>>(
       "/auth/send-code",
@@ -21,7 +21,7 @@ export const authService = {
     }
   },
 
-  /** 验证码登录 */
+  /** Log in with a verification code. */
   async login(email: string, code: string): Promise<ServiceResult<TokenData>> {
     const { data } = await api.post<ApiResponse<TokenData>>("/auth/login", {
       email,
@@ -34,7 +34,7 @@ export const authService = {
     }
   },
 
-  /** 获取当前用户信息 */
+  /** Fetch the current user. */
   async fetchUser(): Promise<ServiceResult<UserProfile>> {
     const { data } = await api.get<ApiResponse<UserProfile>>("/users/me")
     return {

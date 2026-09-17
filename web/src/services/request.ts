@@ -8,13 +8,14 @@ import {
 import axios from "axios"
 
 import { toast } from "@/components/ui/toast"
+import i18next from "@/i18n"
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "/api",
   headers: { "Content-Type": "application/json" },
 })
 
-// ── 请求拦截器：自动附加 access_token ──────────────────
+// ── Request interceptor: attach access_token ──────────
 api.interceptors.request.use((config) => {
   const token = getAccessToken()
   if (token) {
@@ -23,7 +24,7 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// ── 响应拦截器：401 自动刷新 ───────────────────────────
+// ── Response interceptor: refresh on 401 ──────────────
 let isRefreshing = false
 let pendingQueue: Array<{
   resolve: (token: string) => void
@@ -58,15 +59,15 @@ api.interceptors.response.use(
     console.log("status： ", status)
 
     if ([502, 503, 504].includes(status)) {
-      // 服务器错误，直接返回错误
+      // Return server errors directly.
       toast.add({
         type: "error",
-        description: "服务器错误，请稍后再试",
+        description: i18next.t("error.server"),
       })
       return Promise.reject(error)
     }
 
-    // 只处理 401，且不是 refresh 接口自己（避免死循环）
+    // Handle 401 responses except the refresh endpoint itself.
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
@@ -79,7 +80,7 @@ api.interceptors.response.use(
         return Promise.reject(error)
       }
 
-      // 如果正在刷新，排队等待
+      // Queue requests while a token refresh is in progress.
       if (isRefreshing) {
         return new Promise<string>((resolve, reject) => {
           pendingQueue.push({ resolve, reject })
@@ -105,9 +106,9 @@ api.interceptors.response.use(
           return api(originalRequest)
         }
 
-        // refresh 失败
+        // Refresh failed.
         redirectToLogin()
-        processQueue(new Error("refresh failed"), null)
+        processQueue(new Error(i18next.t("error.refresh_failed")), null)
         return Promise.reject(error)
       } catch (refreshError) {
         redirectToLogin()

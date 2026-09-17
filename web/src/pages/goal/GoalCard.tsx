@@ -1,12 +1,18 @@
-import Empty from "@/components/Empty"
-import { Button } from "@/components/ui/button"
 
-import type { GoalCardProps } from '@/types/goal'
+import { useGoalStore } from '@/stores/goalStore'
+import type { Goal, GoalCardProps } from '@/types/goal'
 import { GOAL_STATUS } from '@/utils/constants'
+import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 
 export default function GoalCard({ data, onStart }: GoalCardProps) {
-  if (data.length === 0) {
-    return <Empty />
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { setCurrentGoal } = useGoalStore()
+
+  const handleClick = (goal: Goal) => {
+    setCurrentGoal(goal)
+    navigate("/space")
   }
 
   return (
@@ -14,28 +20,22 @@ export default function GoalCard({ data, onStart }: GoalCardProps) {
       {data.map((goal) => (
         <div
           key={goal.id}
-          className="flex flex-col gap-4 rounded-(--radius-lg) border-l-4 border-l-(--primary) shadow-md p-4"
+          onClick={() => handleClick(goal)}
+          className="flex flex-col gap-4 cursor-pointer rounded-(--radius-lg) border-l-4 border-l-(--primary) shadow-sm hover:shadow-md p-4"
         >
           <div className="flex items-start justify-between gap-2">
             <h3 className="text-base font-medium">{goal.title}</h3>
             <span className="inline-flex shrink-0 items-center rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
-              {GOAL_STATUS[goal.status]}
+              {t(GOAL_STATUS[goal.status])}
             </span>
           </div>
 
           <dl className="flex flex-col gap-2 text-sm">
             <div className="flex items-center gap-2">
-              <dt className="text-muted-foreground">目标周期</dt>
-              <dd>{goal.duration}</dd>
+              <dt className="text-muted-foreground">{t("goal.table.duration")}</dt>
+              <dd>{goal.duration} {t("common.day")}</dd>
             </div>
           </dl>
-
-          <div className="mt-auto flex gap-2 border-t pt-4">
-            <Button variant="outline" size="sm">
-              详情
-            </Button>
-            {goal.status === "draft" && <Button size="sm" onClick={() => onStart?.(goal.id)}>启动</Button>}
-          </div>
         </div>
       ))}
     </div>

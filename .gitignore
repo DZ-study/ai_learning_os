@@ -69,3 +69,8 @@ tests
 UI
 
 .pnpm-store
+
+.lock
+package-lock
+
+study_demo

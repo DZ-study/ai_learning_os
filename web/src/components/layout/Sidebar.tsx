@@ -56,24 +56,22 @@ export default function MainSidebar() {
       </SidebarHeader>
       <SidebarContent>
         {menuItems.map((item) => item.key === "learning" ? <SidebarGroup key={item.key}>
-          <SidebarGroupLabel className="text-sm text-sidebar-foreground">我的目标</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sm text-sidebar-foreground">{t("menu.my_goals")}</SidebarGroupLabel>
           <SidebarGroupAction>
             {/* <Plus className="cursor-pointer" /> <span className="sr-only">Add Project</span> */}
           </SidebarGroupAction>
           <SidebarGroupContent>
             <SidebarMenu>
-              {/* 加载中 / 暂无目标 的提示保持不变 */}
               {isLoading && (
                 <SidebarMenuSubItem>
-                  <span className="px-2 text-xs text-muted-foreground">Loading…</span>
+                  <span className="px-2 text-xs text-muted-foreground">{t("common.loading")}</span>
                 </SidebarMenuSubItem>
               )}
               {!isLoading && goals.length === 0 && (
                 <SidebarMenuSubItem>
-                  <span className="px-2 text-xs text-muted-foreground">暂无目标</span>
+                  <span className="px-2 text-xs text-muted-foreground">{t("common.empty")}</span>
                 </SidebarMenuSubItem>
               )}
-              {/* 核心修改：遍历目标列表 */}
               {goals.map((goal) => (
                 <SidebarMenuItem key={goal.id}>
                   <SidebarMenuButton
@@ -84,10 +82,9 @@ export default function MainSidebar() {
                       />
                     }
                     isActive={location.pathname === `/goals/${goal.id}/agent`}
-                    tooltip={goal.title} // 关键：设置 tooltip，收起时悬浮显示目标名称
+                    tooltip={t(goal.title, { defaultValue: goal.title })}
                     className="transition-colors"
                   >
-                    {/* 关键：在收起状态下显示一个图标，展开状态下显示文字 */}
                     <BookOpen className="size-4" />
                     <span className="truncate">{goal.title}</span>
                   </SidebarMenuButton>

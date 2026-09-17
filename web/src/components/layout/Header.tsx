@@ -1,9 +1,10 @@
+import Logo from "@/assets/svg/logo.svg?react"
 import { Button } from "@/components/ui/button"
-import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useCurrentModule } from '@/hooks/useCurrentModule'
 import { useThemeStore } from "@/stores/themeStore"
 import { CircleUser, Languages, Moon, Sun } from "lucide-react"
 import { useTranslation } from "react-i18next"
+
 
 export default function Header() {
   const { t, i18n } = useTranslation()
@@ -19,9 +20,11 @@ export default function Header() {
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-background pl-2 pr-4">
       <div className="flex items-center">
-        <SidebarTrigger className="cursor-pointer" />
-        <div>
-          {label}
+        {/* <SidebarTrigger className="cursor-pointer" /> */}
+        <div className="flex items-center gap-2">
+          {/* {label} */}
+          <Logo className="size-6 shrink-0" />
+          <h2 className="text-2xl font-semibold">Pilot</h2>
         </div>
       </div>
       <div className="flex items-center gap-1">

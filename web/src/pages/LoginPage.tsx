@@ -28,7 +28,7 @@ export default function LoginPage() {
   const emailInputRef = useRef<HTMLInputElement | null>(null)
   const codeInputRef = useRef<HTMLInputElement | null>(null)
 
-  // 聚焦输入框
+  // Focus the active input.
   useEffect(() => {
     if (step === "email") emailInputRef.current?.focus()
     if (step === "code") codeInputRef.current?.focus()
@@ -54,7 +54,7 @@ export default function LoginPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* 邮箱输入 */}
+          {/* Email input */}
           {step === "email" && (
             <div className="space-y-1.5">
               <Label htmlFor="email">{t("auth.label_email")}</Label>
@@ -80,7 +80,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* 验证码输入 */}
+          {/* Verification code input */}
           {step === "code" && (
             <div className="space-y-1.5">
               <Button
@@ -121,7 +121,7 @@ export default function LoginPage() {
                 </p>
               )}
 
-              {/* 重新发送 */}
+              {/* Resend */}
               <div className="mt-3 text-center">
                 {countdown > 0 ? (
                   <span className="text-sm text-muted-foreground">
@@ -143,14 +143,14 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* API 错误提示 */}
+          {/* API error */}
           {error && (
             <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {error}
             </p>
           )}
 
-          {/* 提交按钮 */}
+          {/* Submit button */}
           <Button type="submit" size="lg" disabled={loading} className="w-full">
             {loading && <Loader2 className="mr-2 animate-spin" />}
             {step === "email" ? t("auth.continue") : t("auth.login")}
