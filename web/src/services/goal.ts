@@ -42,6 +42,14 @@ export const createSpaceNode = (goalId: number, data: {
   return req.post<SpaceNode>(`/goals/${goalId}/nodes`, data)
 }
 
+export const updateSpaceNodePosition = (
+  goalId: number,
+  nodeId: number,
+  position: WorkspaceItemPosition,
+) => {
+  return req.patch<SpaceNode>(`/goals/${goalId}/nodes/${nodeId}/position`, { position })
+}
+
 /* Generate a plan. */
 export const generatePlan = (id: number, sessionId: number): Promise<void> => {
   return req.post(`/goals/${id}/agent/confirm`, {

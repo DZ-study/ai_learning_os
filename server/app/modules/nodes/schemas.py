@@ -13,6 +13,10 @@ class NodeCreate(BaseModel):
     position: dict[str, Any] = Field(default_factory=lambda: {"x": 42, "y": 78})
 
 
+class NodePositionUpdate(BaseModel):
+    position: dict[str, Any]
+
+
 class NodeResponse(NodeCreate):
     model_config = ConfigDict(from_attributes=True)
 

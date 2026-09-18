@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { updateSpaceNodePosition } from '@/services/goal'
 
 import type {
   CoursePlan,
@@ -24,7 +25,7 @@ interface WorkspaceState {
   selectItem: (id: string | null) => void
   openCourseDetail: (id: string) => void
   setCanvasView: (view: CanvasView) => void
-  updateItemPosition: (id: string, position: WorkspaceItemPosition) => void
+  updateItemPosition: (id: string, position: WorkspaceItemPosition) => Promise<void>
   updateNote: (id: string, content: string) => void
   addNote: () => void
   removeItem: (id: string) => void
@@ -36,7 +37,7 @@ interface WorkspaceState {
   upsertNode: (node: SpaceNode) => void
 }
 
-export const useWorkspaceStore = create<WorkspaceState>((set) => ({
+export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   items: initialItems,
   coursePlans: {},
   nodes: [],
@@ -59,12 +60,39 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
 
   setCanvasView: (view) => set({ canvasView: view }),
 
-  updateItemPosition: (id, position) =>
-    set((state) => ({
-      items: state.items.map((item) =>
+  updateItemPosition: async (id, position) => {
+    const state = get()
+    const node = state.nodes.find((item) => String(item.id) === id)
+    const previousPosition = state.items.find((item) => item.id === id)
+
+    if (!node || !previousPosition) return
+
+    set((current) => ({
+      nodes: current.nodes.map((item) =>
+        item.id === node.id ? { ...item, position } : item,
+      ),
+      items: current.items.map((item) =>
         item.id === id ? { ...item, ...position } : item,
       ),
-    })),
+    }))
+
+    try {
+      await updateSpaceNodePosition(node.goal_id, node.id, position)
+    } catch {
+      set((current) => ({
+        nodes: current.nodes.map((item) =>
+          item.id === node.id
+            ? { ...item, position: { x: previousPosition.x, y: previousPosition.y } }
+            : item,
+        ),
+        items: current.items.map((item) =>
+          item.id === id
+            ? { ...item, x: previousPosition.x, y: previousPosition.y }
+            : item,
+        ),
+      }))
+    }
+  },
 
   updateNote: (id, content) =>
     set((state) => ({

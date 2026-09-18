@@ -8,6 +8,7 @@ import {
 import { createSpaceNode, getSpaceNodes } from '@/services/goal'
 import { useGoalStore } from '@/stores/goalStore'
 import { useWorkspaceStore } from '@/stores/workspaceStore'
+import { getNextAvailablePosition } from '@/utils/workspace-position'
 import { useCallback, useEffect } from 'react'
 
 import LearningCanvas from './canvas/LearningCanvas'
@@ -19,16 +20,19 @@ import WorkspaceHeader from './WorkspaceHeader'
 export default function LearningSpace() {
   const loadNodes = useWorkspaceStore((state) => state.loadNodes)
   const upsertNode = useWorkspaceStore((state) => state.upsertNode)
+  const items = useWorkspaceStore((state) => state.items)
   const goal = useGoalStore((state) => state.currentGoal)
 
   const addNote = useCallback(() => {
     if (!goal?.id) return
+    const position = getNextAvailablePosition(items)
     void createSpaceNode(goal.id, {
       type: 'note',
       title: 'workspace.new_note',
       content: { content: '', color: 'yellow' },
+      position,
     }).then(({ data }) => upsertNode(data))
-  }, [goal?.id, upsertNode])
+  }, [goal?.id, items, upsertNode])
 
   useEffect(() => {
     let cancelled = false

@@ -6,7 +6,7 @@ from app.core.database.session import get_db
 from app.core.dependencies import get_current_user
 from app.modules.goals.models import Goals
 from app.modules.nodes.models import SpaceNode
-from app.modules.nodes.schemas import NodeCreate, NodeResponse
+from app.modules.nodes.schemas import NodeCreate, NodePositionUpdate, NodeResponse
 from app.modules.user.models import User
 
 router = APIRouter(prefix="/goals/{goal_id}/nodes", tags=["Goal Nodes"])
@@ -44,15 +44,62 @@ async def create_node(
     db: AsyncSession = Depends(get_db),
 ):
     await _get_owned_goal(goal_id, current_user, db)
+
+    existing_positions = await db.scalars(
+        select(SpaceNode.position).where(
+            SpaceNode.goal_id == goal_id,
+            SpaceNode.user_id == current_user.id,
+        )
+    )
+    occupied = {
+        (position.get("x"), position.get("y"))
+        for position in existing_positions
+        if isinstance(position, dict)
+    }
+    position = dict(data.position)
+    x = position.get("x", 42)
+    y = position.get("y", 78)
+    while (x, y) in occupied:
+        x += 360
+        if x > 900:
+            x = 42
+            y += 220
+    position.update(x=x, y=y)
+
     node = SpaceNode(
         goal_id=goal_id,
         user_id=current_user.id,
         type=data.type,
         title=data.title,
         content=data.content,
-        position=data.position,
+        position=position,
     )
     db.add(node)
+    await db.commit()
+    await db.refresh(node)
+    return node
+
+
+@router.patch("/{node_id}/position", response_model=NodeResponse)
+async def update_node_position(
+    goal_id: int,
+    node_id: int,
+    data: NodePositionUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await _get_owned_goal(goal_id, current_user, db)
+    node = await db.scalar(
+        select(SpaceNode).where(
+            SpaceNode.id == node_id,
+            SpaceNode.goal_id == goal_id,
+            SpaceNode.user_id == current_user.id,
+        )
+    )
+    if node is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="节点不存在")
+
+    node.position = data.position
     await db.commit()
     await db.refresh(node)
     return node

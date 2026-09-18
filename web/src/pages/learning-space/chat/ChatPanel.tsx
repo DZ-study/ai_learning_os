@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button'
 import { createSpaceNode, getAgentSession } from '@/services/goal'
 import { useGoalStore } from '@/stores/goalStore'
 import { useWorkspaceStore } from '@/stores/workspaceStore'
+import { getNextAvailablePosition } from '@/utils/workspace-position'
 import type { CoursePlan } from '@/types/workspace'
 import { streamSSE } from '@/utils/sse-client'
 import type {
@@ -292,10 +293,12 @@ export default function ChatPanel() {
             }
 
             const course = toCoursePlan(goal.id, goal.title, plan)
+            const position = getNextAvailablePosition(useWorkspaceStore.getState().items)
             const { data: node } = await createSpaceNode(goal.id, {
               type: 'course',
               title: course.title,
               content: course as unknown as Record<string, unknown>,
+              position,
             })
             upsertNode(node)
             setCoursePlan({ ...course, id: String(node.id) })
