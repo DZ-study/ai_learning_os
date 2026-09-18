@@ -18,7 +18,7 @@ export default function Header() {
   const { label } = useCurrentModule()
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-background pl-2 pr-4">
+    <header className="sticky top-0 flex h-16 shrink-0 items-center justify-between border-b border-border bg-background pl-2 pr-4">
       <div className="flex items-center">
         {/* <SidebarTrigger className="cursor-pointer" /> */}
         <div className="flex items-center gap-2">

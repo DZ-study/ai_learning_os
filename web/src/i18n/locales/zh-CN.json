@@ -18,7 +18,11 @@
     "noon": "中午好",
     "afternoon": "下午好",
     "evening": "晚上好",
-    "input_placeholder": "用烹饪比喻解释递归"
+    "input_placeholder": "用烹饪比喻解释递归",
+    "guidance": "今天想学点什么？",
+    "inspiration": "灵感推荐",
+    "suggestions": ["零基础入门 Python", "产品经理学 SQL", "30 天学会摄影构图", "用 React 做一个个人网站"],
+    "footer": "Pilot · 你的 AI 学习伙伴"
   },
   "auth": {
     "title_email": "登录 AI Learning OS",
@@ -171,6 +175,7 @@
     "space": "空间",
     "current_space": "当前学习空间",
     "content": "内容",
+    "courseNav": "课程",
     "recent": "最近记录",
     "search_placeholder": "搜索学习内容…",
     "library": "资源库",
@@ -203,27 +208,14 @@
     "generating": "生成中",
     "ready": "就绪",
     "course_plan": "课程计划",
+    "course_detail": "课程详情",
+    "course_detail_description": "按章节查看这门课程的学习内容与进度。",
+    "back_to_workspace": "返回工作区",
+    "lessons": "课时",
+    "completed": "已完成",
     "new_note": "新建笔记",
     "new_note_content": "记录一个新想法…",
-    "saved_note": "已保存到学习空间",
-    "course": {
-      "title": "FastAPI 从入门到项目实战",
-      "description": "一条从基础语法到完整 API 项目的实践路线，帮助你建立稳定的后端开发能力。",
-      "chapter_1": "第 1 章 · FastAPI 基础",
-      "lesson_1": "安装环境与第一个接口",
-      "lesson_2": "路径参数与查询参数",
-      "lesson_3": "请求体与响应模型",
-      "chapter_2": "第 2 章 · 路由与请求处理",
-      "lesson_4": "路由组织与 APIRouter",
-      "lesson_5": "依赖注入 Depends",
-      "chapter_3": "第 3 章 · Pydantic 数据校验",
-      "lesson_6": "Schema 设计与数据校验",
-      "lesson_7": "错误处理与 API 文档",
-      "chapter_4": "第 4 章 · 构建真实项目",
-      "lesson_8": "认证、数据库与部署",
-      "note_title": "学习笔记",
-      "note_content": "先把 API 跑起来\n再补上数据校验"
-    }
+    "saved_note": "已保存到学习空间"
   },
   "chat": {
     "assistant": "学习助手",

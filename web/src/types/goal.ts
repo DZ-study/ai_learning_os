@@ -48,3 +48,19 @@ export type GoalTableProps = GoalListShow
 
 
 export type GoalCardProps = GoalTableProps
+
+
+export interface AgentSessionHistory {
+  session_id: number
+  stage: string
+  context: {
+    messages?: Array<{
+      role: 'user' | 'assistant'
+      content: string
+      type?: 'plan'
+      plan?: Record<string, unknown>
+    }>
+    pending_plan?: Record<string, unknown>
+    [key: string]: unknown
+  }
+}

@@ -18,7 +18,11 @@
     "noon": "Good afternoon",
     "afternoon": "Good afternoon",
     "evening": "Good evening",
-    "input_placeholder": "Explain recursion with a cooking metaphor"
+    "input_placeholder": "Explain recursion with a cooking metaphor",
+    "guidance": "What would you like to learn today?",
+    "inspiration": "Inspiration",
+    "suggestions": ["Learn Python from scratch", "SQL for product managers", "Master photo composition in 30 days", "Build a personal site with React"],
+    "footer": "Pilot · Your AI learning companion"
   },
   "auth": {
     "title_email": "Login to AI Learning OS",
@@ -171,6 +175,7 @@
     "space": "Space",
     "current_space": "Current Learning Space",
     "content": "Content",
+    "courseNav": "Course",
     "recent": "Recent",
     "search_placeholder": "Search learning content…",
     "library": "Resource Library",
@@ -203,27 +208,14 @@
     "generating": "GENERATING",
     "ready": "READY",
     "course_plan": "Course plan",
+    "course_detail": "Course details",
+    "course_detail_description": "Review the learning content and progress for this course by chapter.",
+    "back_to_workspace": "Back to workspace",
+    "lessons": "lessons",
+    "completed": "completed",
     "new_note": "New note",
     "new_note_content": "Write down a new idea…",
-    "saved_note": "Saved to learning space",
-    "course": {
-      "title": "FastAPI from Beginner to Production Project",
-      "description": "A practical path from basic syntax to a complete API project, helping you build reliable backend skills.",
-      "chapter_1": "Chapter 1 · FastAPI Foundations",
-      "lesson_1": "Set up the environment and build your first endpoint",
-      "lesson_2": "Path parameters and query parameters",
-      "lesson_3": "Request bodies and response models",
-      "chapter_2": "Chapter 2 · Routing and Request Handling",
-      "lesson_4": "Organizing routes with APIRouter",
-      "lesson_5": "Dependency injection with Depends",
-      "chapter_3": "Chapter 3 · Pydantic Data Validation",
-      "lesson_6": "Schema design and data validation",
-      "lesson_7": "Error handling and API documentation",
-      "chapter_4": "Chapter 4 · Building a Real Project",
-      "lesson_8": "Authentication, databases, and deployment",
-      "note_title": "Learning notes",
-      "note_content": "Get the API running first\nThen add data validation"
-    }
+    "saved_note": "Saved to learning space"
   },
   "chat": {
     "assistant": "Learning Assistant",
