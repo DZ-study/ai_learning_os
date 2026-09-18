@@ -38,8 +38,11 @@ class GoalService:
         result = await self._repository.get_all_by_user_id(user_id)
         return result
 
-    async def get_goal(self, goal_id: int):
-        result = await self._repository.get_one_by_id(goal_id)
+    async def get_goal(self, goal_id: int, user_id: int):
+        result = await self._repository.get_one_by_id(
+            goal_id=goal_id,
+            user_id=user_id,
+        )
         if not result:
             raise NotFoundException("目标不存在")
         return result

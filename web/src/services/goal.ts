@@ -2,7 +2,8 @@
  * Learning goals.
  */
 
-import type { Goal, GoalFormValues } from '@/types/goal'
+import type { AgentSessionHistory, Goal, GoalFormValues } from '@/types/goal'
+import type { SpaceNode, SpaceNodeType, WorkspaceItemPosition } from '@/types/workspace'
 import req from './request'
 
 export const parseGoalByAI = (content: string) => {
@@ -15,9 +16,30 @@ export const getGoals = async (): Promise<Goal[]> => {
   return data || []
 }
 
+export const getGoal = (id: number) => {
+  return req.get<Goal>(`/goals/${id}`)
+}
+
 /** Create a goal. */
 export const createGoal = (data: GoalFormValues) => {
-  return req.post('/goals/create', data)
+  return req.post<Goal>('/goals/create', data)
+}
+
+export const getAgentSession = (goalId: number) => {
+  return req.get<AgentSessionHistory>(`/goals/${goalId}/agent/session`)
+}
+
+export const getSpaceNodes = (goalId: number) => {
+  return req.get<SpaceNode[]>(`/goals/${goalId}/nodes`)
+}
+
+export const createSpaceNode = (goalId: number, data: {
+  type: SpaceNodeType
+  title: string
+  content?: Record<string, unknown>
+  position?: WorkspaceItemPosition
+}) => {
+  return req.post<SpaceNode>(`/goals/${goalId}/nodes`, data)
 }
 
 /* Generate a plan. */

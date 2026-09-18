@@ -50,7 +50,10 @@ def ask_question(state: GoalPlanState):
 
 
 async def generate_plan(state: GoalPlanState):
-    model = get_chat_model().with_structured_output(StudyPlan)
+    model = get_chat_model().with_structured_output(
+        StudyPlan,
+        method="json_mode",
+    )
 
     response = await model.ainvoke(
         [
@@ -60,6 +63,10 @@ async def generate_plan(state: GoalPlanState):
                 你是学习规划助手。
                 请根据目标和用户信息生成具体、可执行的学习计划。
                 任务必须包含预计学习分钟数。
+                只返回 JSON，不要返回 Markdown 或其他说明文字。
+                JSON 必须包含 summary 和 milestones；每个 milestone 必须包含
+                title、objective、tasks；每个 task 必须包含 title、description、
+                estimated_minutes（正整数）。
                 """,
             ),
             (
@@ -82,7 +89,10 @@ async def generate_plan(state: GoalPlanState):
 
 async def evaluate_info(state: GoalPlanState):
 
-    model = get_chat_model().with_structured_output(InfoEvaluation)
+    model = get_chat_model().with_structured_output(
+        InfoEvaluation,
+        method="json_mode",
+    )
 
     prompt = f"""
         你是一个学习规划 Agent。
@@ -114,6 +124,11 @@ async def evaluate_info(state: GoalPlanState):
         6. 不要机械地询问字段名称。
         7. 如果信息已经足够，complete=true。
         8. complete=true 时，question 必须为 null。
+        9. missing 必须是 JSON 数组；没有缺失信息时返回 []，不要返回 null。
+
+        只返回 JSON，不要返回 Markdown 或其他说明文字。
+        JSON 必须包含 current_level、daily_minutes、learning_preference、
+        missing、question、complete 字段。
     """
 
     response = await model.ainvoke(

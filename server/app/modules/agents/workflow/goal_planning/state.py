@@ -1,6 +1,6 @@
 from typing import Any, TypedDict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class GoalPlanState(TypedDict, total=False):
@@ -20,7 +20,10 @@ class GoalPlanState(TypedDict, total=False):
 class PlanTask(BaseModel):
     title: str
     description: str
-    estimated_minutes: int = Field(gt=0)
+    estimated_minutes: int = Field(
+        gt=0,
+        description="预计完成该学习任务所需的分钟数",
+    )
 
 
 # 一个阶段
@@ -44,3 +47,8 @@ class InfoEvaluation(BaseModel):
     missing: list[str] = Field(default_factory=list)
     question: str | None = None
     complete: bool = False
+
+    @field_validator("missing", mode="before")
+    @classmethod
+    def _coerce_missing(cls, value: Any) -> list[str]:
+        return value or []

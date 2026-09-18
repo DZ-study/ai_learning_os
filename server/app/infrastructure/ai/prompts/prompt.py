@@ -71,7 +71,7 @@ PLAN_GENERATE_SYSTEM = """你是一个学习规划助手。请根据用户的学
 每个阶段应包含：
 - phase_name: 阶段名称
 - duration_days: 持续天数
-- topics: 学习主题列表
+- topics: 学习主题列表，每个主题包含 title、description、estimated_minutes
 - milestones: 里程碑/检查点
 - resources: 推荐学习资源（书名、课程名、链接）
 

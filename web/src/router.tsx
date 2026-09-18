@@ -2,6 +2,7 @@ import { lazy } from "react"
 import { createBrowserRouter } from "react-router-dom"
 import App from "./App"
 import GoalAgentTutor from './pages/goal/GoalAgentTutor'
+const GoalSpace = lazy(() => import('@/pages/GoalSpace'))
 const AuthGuard = lazy(() => import("@/components/auth/AuthGuard"))
 const Layout = lazy(() => import("@/components/layout/Layout"))
 const HomePage = lazy(() => import("./pages/HomePage"))
@@ -17,17 +18,17 @@ export const router = createBrowserRouter([
     path: "/",
     element: <App />,
     children: [
-      // 登录页（无需 AuthGuard，无需 Layout）
+      // Login page (no AuthGuard or Layout).
       {
         path: "login",
         element: <LoginPage />,
       },
-      // 需要登录的路由，包裹 Layout（侧边栏 + 头部 + 内容区）
+      // Authenticated routes wrapped by Layout.
       {
         element: <AuthGuard />,
         children: [
           {
-            element: <Layout />,
+            // element: <Layout />,
             children: [
               { index: true, element: <HomePage /> },
               { path: "study_goal", element: <GoalPage /> },
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
               { path: "agent", element: <AgentPage /> },
               { path: "ai", element: <AITutorPage /> },
               { path: "knowledge", element: <KnowledgePage /> },
+              { path: "space/:goalId", element: <GoalSpace /> },
             ],
           },
         ],

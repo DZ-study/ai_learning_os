@@ -257,10 +257,14 @@ class GoalAgentService:
 
         messages = list(merged_context.get("messages", []))
 
+        plan_text = self._format_plan_message(plan) or "学习计划已生成，等待你的确认。"
+
         messages.append(
             {
                 "role": "assistant",
-                "content": "学习计划已生成，等待你的确认。",
+                "type": "plan",
+                "content": plan_text,
+                "plan": plan,
             }
         )
 
@@ -286,6 +290,37 @@ class GoalAgentService:
     @staticmethod
     def _event(event_type: str, data: dict) -> str:
         return f"event: {event_type}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+    @staticmethod
+    def _format_plan_message(plan: dict) -> str:
+        """把学习计划格式化为 Markdown 文本，作为历史消息持久化。"""
+        sections: list[str] = []
+
+        summary = plan.get("summary")
+        if summary:
+            sections.append(f"**学习计划**\n\n{summary}")
+
+        for index, milestone in enumerate(plan.get("milestones") or [], start=1):
+            lines = [f"### {index}. {milestone.get('title') or '学习阶段'}"]
+            objective = milestone.get("objective")
+            if objective:
+                lines.append(objective)
+            for task in milestone.get("tasks") or []:
+                title = task.get("title") or "学习任务"
+                description = task.get("description")
+                estimated_minutes = task.get("estimated_minutes")
+                duration = (
+                    f"（预计 {estimated_minutes} 分钟）"
+                    if estimated_minutes
+                    else ""
+                )
+                lines.append(
+                    f"- **{title}**{duration}"
+                    f"{f'：{description}' if description else ''}"
+                )
+            sections.append("\n\n".join(lines))
+
+        return "\n\n".join(sections)
 
     @classmethod
     def _error(cls, message: str, *, code: str) -> str:

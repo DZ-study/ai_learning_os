@@ -26,6 +26,17 @@ class GoalRepository:
         )
         return result.scalars().all()
 
-    async def get_one_by_id(self, goal_id: int) -> Goals | None:
-        result = await self.session.get(Goals, goal_id)
-        return result
+    async def get_one_by_id(
+        self,
+        goal_id: int,
+        user_id: int,
+    ) -> Goals | None:
+        result = await self.session.execute(
+            select(Goals)
+            .where(
+                Goals.id == goal_id,
+                Goals.user_id == user_id,
+            )
+            .options(selectinload(Goals.plan))
+        )
+        return result.scalar_one_or_none()

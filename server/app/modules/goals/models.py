@@ -65,6 +65,10 @@ class Goals(TimestampMixin, Base):
         "GoalPlan", back_populates="goal", uselist=False, lazy="selectin"
     )
 
+    nodes = relationship(
+        "SpaceNode", back_populates="goal", cascade="all, delete-orphan"
+    )
+
 
 # 目标计划
 class GoalPlan(TimestampMixin, Base):

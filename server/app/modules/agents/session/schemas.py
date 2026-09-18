@@ -8,3 +8,9 @@ class AgentSessionCreateData(BaseModel):
     stage: str = "initial"
     context: dict = {}
     status: str = "pending"
+
+
+class AgentSessionHistoryResponse(BaseModel):
+    session_id: int
+    stage: str
+    context: dict

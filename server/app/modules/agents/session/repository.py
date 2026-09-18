@@ -24,14 +24,13 @@ class AgentSessionRepository:
         self,
         user_id: int,
         goal_id: int | None = None,
-        agent_type: str = "goal_planning",
+        agent_type: str | None = None,
     ) -> AgentSession | None:
-        session = await self.db.execute(
-            select(AgentSession).where(
-                AgentSession.user_id == user_id,
-                AgentSession.goal_id == goal_id,
-                AgentSession.agent_type == agent_type,
-                AgentSession.status.in_(["active", "paused"]),
-            )
+        stmt = select(AgentSession).where(
+            AgentSession.user_id == user_id,
+            AgentSession.goal_id == goal_id,
         )
+        if agent_type is not None:
+            stmt = stmt.where(AgentSession.agent_type == agent_type)
+        session = await self.db.execute(stmt)
         return session.scalars().first()

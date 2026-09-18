@@ -37,10 +37,13 @@ async def create_goal(
 # ):
 #     return await goal_service.parse_goal(request.messages)
 
-# # 获取目标详情
-# @router.get("/{goal_id}", response_model=GoalResponse)
-# async def get_goal(goal_id: int, current_user=Depends(get_current_user)):
-#     return await goal_service.get_goal(goal_id=goal_id, user_id=current_user.id)
+# 获取目标详情
+@router.get("/{goal_id}", response_model=GoalResponse)
+async def get_goal(
+    goal_id: int,
+    goal_service: GoalService = Depends(get_goal_service),
+    current_user=Depends(get_current_user)):
+    return await goal_service.get_goal(goal_id=goal_id, user_id=current_user.id)
 
 
 # # 修改目标

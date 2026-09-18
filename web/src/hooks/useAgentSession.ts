@@ -21,11 +21,11 @@ function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === "AbortError"
 }
 
-export function useAgentSession(goalId?: number): UseAgentSessionReturn {
+export function useAgentSession(goalId?: number, initialSessionId?: number | null): UseAgentSessionReturn {
   const [messages, setMessages] = useState<AgentMessage[]>([])
   const [stage, setStage] = useState<AgentStage>("idle")
   const [plan, setPlan] = useState<AgentPlan | null>(null)
-  const [sessionId, setSessionId] = useState<number | null>(null)
+  const [sessionId, setSessionId] = useState<number | null>(initialSessionId ?? null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const controllerRef = useRef<AbortController | null>(null)
@@ -118,6 +118,10 @@ export function useAgentSession(goalId?: number): UseAgentSessionReturn {
   }, [])
 
   useEffect(() => abort, [abort])
+
+  useEffect(() => {
+    setSessionId(initialSessionId ?? null)
+  }, [initialSessionId])
 
   return { messages, stage, plan, sessionId, loading, error, start, sendMessage, abort, reset }
 }

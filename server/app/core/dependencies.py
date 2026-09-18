@@ -8,6 +8,14 @@ from app.infrastructure.email.client import EmailClient
 from app.infrastructure.email.service import EmailService
 from app.infrastructure.redis.client import redis_client
 from app.infrastructure.redis.service import RedisService
+from app.modules.agents.orchestrator.decision_engine import LLMDecisionEngine
+from app.modules.agents.orchestrator.dispatcher import AgentDispatcher
+from app.modules.agents.orchestrator.policy import OrchestratorPolicy
+from app.modules.agents.orchestrator.service import Orchestrator
+from app.modules.agents.registry.agent_registry import (
+    AgentRegistry,
+    build_agent_registry,
+)
 from app.modules.agents.service import GoalAgentService
 from app.modules.agents.session.repository import AgentSessionRepository
 from app.modules.agents.session.service import AgentSessionService
@@ -108,4 +116,20 @@ def get_goal_agent_service(
         llm=llm,
         session=db,
         agent_session_service=session_service,
+    )
+
+
+def get_agent_registry(
+    goal_agent: GoalAgentService = Depends(get_goal_agent_service),
+) -> AgentRegistry:
+    return build_agent_registry(goal_agent)
+
+
+def get_orchestrator(
+    registry: AgentRegistry = Depends(get_agent_registry),
+) -> Orchestrator:
+    return Orchestrator(
+        decision_engine=LLMDecisionEngine(),
+        dispatcher=AgentDispatcher(registry),
+        policy=OrchestratorPolicy(registry),
     )
