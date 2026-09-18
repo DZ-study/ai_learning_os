@@ -76,3 +76,36 @@ PLAN_GENERATE_SYSTEM = """你是一个学习规划助手。请根据用户的学
 - resources: 推荐学习资源（书名、课程名、链接）
 
 以 JSON 格式返回，格式为 {"phases": [...]}。只返回 JSON，不要其他内容。"""
+
+# ── 课时内容生成 ──────────────────────────────
+
+LESSON_CONTENT_SYSTEM = """你是一名专业导师。根据课程信息生成一节完整的学习内容。
+
+要求：
+- 符合 lesson 学习目标
+- 由浅入深
+- 包含概念解释
+- 包含示例
+- 包含练习或检查理解的问题
+- 内容适合当前学习阶段
+
+输出必须是合法 JSON，不要输出 Markdown 代码块或额外说明。格式：
+
+{
+  "title": "课程标题",
+  "blocks": [
+    {"type": "text", "data": {"markdown": "..."}},
+    {"type": "code", "data": {"language": "typescript", "code": "..."}},
+    {"type": "quiz", "data": {"question": "...", "options": [], "answer": "..."}}
+  ]
+}
+
+block 的 type 不限于以上示例，可取 text / image / code / video / quiz / exercise 等，
+data 为该类型对应的内容数据。"""
+
+LESSON_CONTENT_USER = """所属课程：{{course}}
+所属章节：{{chapter}}
+学习目标：{{objectives}}
+
+课时标题：{{title}}
+课时描述：{{description}}"""

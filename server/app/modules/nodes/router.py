@@ -103,3 +103,54 @@ async def update_node_position(
     await db.commit()
     await db.refresh(node)
     return node
+
+
+@router.post("/{node_id}/lessons/{lesson_id}/complete", response_model=NodeResponse)
+async def complete_node_lesson(
+    goal_id: int,
+    node_id: int,
+    lesson_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await _get_owned_goal(goal_id, current_user, db)
+    node = await db.scalar(
+        select(SpaceNode).where(
+            SpaceNode.id == node_id,
+            SpaceNode.goal_id == goal_id,
+            SpaceNode.user_id == current_user.id,
+        )
+    )
+    if node is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="节点不存在")
+
+    content = dict(node.content or {})
+    chapters = content.get("chapters")
+    lesson_found = False
+    if isinstance(chapters, list):
+        updated_chapters = []
+        for chapter in chapters:
+            if not isinstance(chapter, dict):
+                updated_chapters.append(chapter)
+                continue
+            updated_chapter = dict(chapter)
+            lessons = chapter.get("lessons")
+            if isinstance(lessons, list):
+                updated_lessons = []
+                for lesson in lessons:
+                    if isinstance(lesson, dict) and str(lesson.get("id")) == lesson_id:
+                        updated_lessons.append({**lesson, "status": "completed"})
+                        lesson_found = True
+                    else:
+                        updated_lessons.append(lesson)
+                updated_chapter["lessons"] = updated_lessons
+            updated_chapters.append(updated_chapter)
+        content["chapters"] = updated_chapters
+
+    if not lesson_found:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="课时不存在")
+
+    node.content = content
+    await db.commit()
+    await db.refresh(node)
+    return node

@@ -180,3 +180,35 @@ class LearningTask(TimestampMixin, Base):
         nullable=False,
         default="pending",
     )
+
+    content = relationship(
+        "LessonContent",
+        back_populates="task",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+
+# 课时内容
+class LessonContent(TimestampMixin, Base):
+    __tablename__ = "lesson_contents"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, comment="课时内容ID"
+    )
+
+    lesson_id: Mapped[int] = mapped_column(
+        ForeignKey("learning_tasks.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+        comment="课时ID",
+    )
+
+    # 可扩展内容块结构，如 text/image/code/video/quiz/exercise
+    blocks: Mapped[list] = mapped_column(JSONB, nullable=False, comment="内容块")
+
+    version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, comment="内容版本"
+    )
+
+    task = relationship("LearningTask", back_populates="content")

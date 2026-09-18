@@ -19,10 +19,13 @@ from app.modules.agents.registry.agent_registry import (
 from app.modules.agents.service import GoalAgentService
 from app.modules.agents.session.repository import AgentSessionRepository
 from app.modules.agents.session.service import AgentSessionService
+from app.modules.agents.tools.registry import ToolRegistry, build_lesson_tool_registry
 from app.modules.auth.repository import AuthRepository
 from app.modules.auth.service import AuthService
 from app.modules.goals.repository import GoalRepository
 from app.modules.goals.service import GoalService
+from app.modules.lessons.repository import LessonRepository
+from app.modules.lessons.service import LessonService
 from app.modules.user.models import User
 from app.modules.user.repository import UserRepository
 from app.modules.user.service import UserService
@@ -100,6 +103,21 @@ async def get_goal_service(
 ) -> GoalService:
     goal_repository = GoalRepository(session=session)
     return GoalService(session, repository=goal_repository, ai_service=llm_service)
+
+
+async def get_lesson_service(
+    session: AsyncSession = Depends(get_db),
+    llm_service: LLMService = Depends(get_llm_service),
+) -> LessonService:
+    lesson_repository = LessonRepository(session=session)
+    return LessonService(session, repository=lesson_repository, ai_service=llm_service)
+
+
+def get_tool_registry(
+    lesson_service: LessonService = Depends(get_lesson_service),
+) -> ToolRegistry:
+    """组装 Agent Tool 注册中心，注入请求级 LessonService。"""
+    return build_lesson_tool_registry(lesson_service)
 
 
 def get_goal_agent_service(
