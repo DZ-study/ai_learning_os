@@ -13,7 +13,9 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar'
 import { useWorkspaceStore } from '@/stores/workspaceStore'
+import { useGoalStore } from '@/stores/goalStore'
 import { BookOpen, FileText, Headphones, Layers3, Search, Sparkles } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 const recentNotes: any[] = []
@@ -25,6 +27,8 @@ export default function LearningSidebar() {
   const selectedItemId = useWorkspaceStore((state) => state.selectedItemId)
   const selectItem = useWorkspaceStore((state) => state.selectItem)
   const openCourseDetail = useWorkspaceStore((state) => state.openCourseDetail)
+  const goal = useGoalStore((state) => state.currentGoal)
+  const navigate = useNavigate()
   const { t } = useTranslation()
 
   return (
@@ -66,7 +70,14 @@ export default function LearningSidebar() {
                     <SidebarMenuButton
                       isActive={item.id === selectedItemId}
                       tooltip={label}
-                      onClick={() => item.type === 'course-plan' ? openCourseDetail(item.id) : selectItem(item.id)}
+                      onClick={() => {
+                        if (item.type === 'course-plan') {
+                          openCourseDetail(item.id)
+                          if (goal?.id) navigate(`/space/${goal.id}/detail`)
+                        } else {
+                          selectItem(item.id)
+                        }
+                      }}
                       className="text-[#77747a] data-active:bg-[#eeebff] data-active:text-[#6655b3]"
                     >
                       {item.type === 'note' ? <FileText /> : <BookOpen />}

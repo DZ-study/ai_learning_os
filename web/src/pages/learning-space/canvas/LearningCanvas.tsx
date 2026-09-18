@@ -1,7 +1,9 @@
 import { useWorkspaceStore } from '@/stores/workspaceStore'
 import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useGoalStore } from '@/stores/goalStore'
 
 import CoursePlanCard from './CourseCard'
 import DraggableItem from './DraggableItem'
@@ -22,6 +24,8 @@ export default function LearningCanvas() {
   const removeItem = useWorkspaceStore((state) => state.removeItem)
   const updateItemPosition = useWorkspaceStore((state) => state.updateItemPosition)
   const beginCoursePlanGeneration = useWorkspaceStore((state) => state.beginCoursePlanGeneration)
+  const goal = useGoalStore((state) => state.currentGoal)
+  const navigate = useNavigate()
   const { t } = useTranslation()
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -41,10 +45,20 @@ export default function LearningCanvas() {
 
   const orderedItems = useMemo(() => [...items].sort((a, b) => a.y - b.y), [items])
 
+  const handleOpenCourse = (id: string) => {
+    openCourseDetail(id)
+    if (goal?.id) navigate(`/space/${goal.id}/detail`)
+  }
+
+  const handleBackToWorkspace = () => {
+    setCanvasView('workspace')
+    if (goal?.id) navigate(`/space/${goal.id}`)
+  }
+
   if (canvasView === 'course_detail' && currentCourseId) {
     const course = coursePlans[currentCourseId]
     if (course) {
-      return <CourseDetail course={course} onBack={() => setCanvasView('workspace')} />
+      return <CourseDetail course={course} onBack={handleBackToWorkspace} />
     }
   }
 
@@ -61,7 +75,7 @@ export default function LearningCanvas() {
                   course={course}
                   selected={selectedItemId === item.id}
                   onSelect={() => selectItem(item.id)}
-                  onOpen={() => openCourseDetail(item.id)}
+                  onOpen={() => handleOpenCourse(item.id)}
                   onDelete={() => removeItem(item.id)}
                   onRetry={beginCoursePlanGeneration} />
               </DraggableItem> : null

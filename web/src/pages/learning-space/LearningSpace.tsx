@@ -10,6 +10,7 @@ import { useGoalStore } from '@/stores/goalStore'
 import { useWorkspaceStore } from '@/stores/workspaceStore'
 import { getNextAvailablePosition } from '@/utils/workspace-position'
 import { useCallback, useEffect } from 'react'
+import type { CanvasView } from '@/stores/workspaceStore'
 
 import LearningCanvas from './canvas/LearningCanvas'
 import ChatPanel from './chat/ChatPanel'
@@ -17,9 +18,14 @@ import FloatingToolbar from './FloatingToolbar'
 import LearningSidebar from './sidebar/LearningSidebar'
 import WorkspaceHeader from './WorkspaceHeader'
 
-export default function LearningSpace() {
+interface LearningSpaceProps {
+  initialView?: CanvasView
+}
+
+export default function LearningSpace({ initialView = 'workspace' }: LearningSpaceProps) {
   const loadNodes = useWorkspaceStore((state) => state.loadNodes)
   const upsertNode = useWorkspaceStore((state) => state.upsertNode)
+  const openCourseDetail = useWorkspaceStore((state) => state.openCourseDetail)
   const items = useWorkspaceStore((state) => state.items)
   const goal = useGoalStore((state) => state.currentGoal)
 
@@ -41,10 +47,16 @@ export default function LearningSpace() {
       return () => { cancelled = true }
     }
     void getSpaceNodes(goal.id).then(({ data }) => {
-      if (!cancelled) loadNodes(data)
+      if (cancelled) return
+
+      loadNodes(data)
+      if (initialView === 'course_detail') {
+        const firstCourse = data.find((node) => node.type === 'course')
+        if (firstCourse) openCourseDetail(String(firstCourse.id))
+      }
     })
     return () => { cancelled = true }
-  }, [goal?.id, loadNodes])
+  }, [goal?.id, initialView, loadNodes, openCourseDetail])
 
   return (
     <div className="flex h-full min-h-0 w-full overflow-hidden bg-[#fbfaf9]">

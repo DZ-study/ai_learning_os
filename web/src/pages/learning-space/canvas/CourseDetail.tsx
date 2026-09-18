@@ -1,4 +1,4 @@
-import { ArrowLeft, BookOpen, CheckCircle2, Circle, Clock3 } from 'lucide-react'
+import { ArrowLeft, BookOpen, CheckCircle2, Circle, Clock3, Timer } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import type { CoursePlan } from '@/types/workspace'
@@ -56,9 +56,15 @@ export default function CourseDetail({ course, onBack }: CourseDetailProps) {
                   <h3 className="font-medium text-[#454451]">{t(chapter.title, { defaultValue: chapter.title })}</h3>
                   <div className="mt-3">
                     {chapter.lessons.map((lesson) => (
-                      <div key={lesson.id} className="flex py-2 items-center gap-2 text-sm text-[#77747a]">
-                        {lesson.status === 'completed' ? <CheckCircle2 className="size-4 text-[#6bb590]" /> : <Circle className="size-4 text-[#b8b3bb]" />}
-                        <span className="truncate">{t(lesson.title, { defaultValue: lesson.title })}</span>
+                      <div key={lesson.id} className="flex py-2 items-center justify-between gap-2 text-sm text-[#77747a]">
+                        <div className="flex items-center gap-2">
+                          {lesson.status === 'completed' ? <CheckCircle2 className="size-4 text-[#6bb590]" /> : <Circle className="size-4 text-[#b8b3bb]" />}
+                          <span className="truncate">{t(lesson.title, { defaultValue: lesson.title })}</span>
+                        </div>
+                        {lesson.estimatedMinutes && <div className="flex items-center gap-1">
+                          <Timer className="w-[20px]" />
+                          <span className="text-[12px] mt-[4px]">{lesson.estimatedMinutes} mins</span>
+                        </div>}
                       </div>
                     ))}
                   </div>

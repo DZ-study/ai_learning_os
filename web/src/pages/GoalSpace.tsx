@@ -3,10 +3,11 @@ import { Spinner } from '@/components/ui/spinner'
 import { getGoal } from '@/services/goal'
 import { useGoalStore } from '@/stores/goalStore'
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
 export default function GoalSpace() {
   const { goalId } = useParams<{ goalId: string }>()
+  const location = useLocation()
   const navigate = useNavigate()
   const setCurrentGoal = useGoalStore((state) => state.setCurrentGoal)
   const [isLoading, setIsLoading] = useState(true)
@@ -46,5 +47,11 @@ export default function GoalSpace() {
     )
   }
 
-  return <div className="h-full min-h-0"><LearningSpace /></div>
+  const isDetailRoute = location.pathname.endsWith('/detail')
+
+  return (
+    <div className="h-full min-h-0">
+      <LearningSpace initialView={isDetailRoute ? 'course_detail' : 'workspace'} />
+    </div>
+  )
 }
