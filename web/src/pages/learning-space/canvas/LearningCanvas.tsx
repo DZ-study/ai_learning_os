@@ -1,14 +1,15 @@
+import { useGoalStore } from '@/stores/goalStore'
 import { useWorkspaceStore } from '@/stores/workspaceStore'
 import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useGoalStore } from '@/stores/goalStore'
+import { useNavigate } from 'react-router-dom'
 
+import type { Lesson } from '@/types/workspace'
 import CoursePlanCard from './CourseCard'
+import CourseDetail from './CourseDetail'
 import DraggableItem from './DraggableItem'
 import NoteCard from './NoteCard'
-import CourseDetail from './CourseDetail'
 
 export default function LearningCanvas() {
   const items = useWorkspaceStore((state) => state.items)
@@ -55,10 +56,21 @@ export default function LearningCanvas() {
     if (goal?.id) navigate(`/space/${goal.id}`)
   }
 
+  const handleStartLesson = (lesson: Lesson) => {
+    if (!goal?.id || !currentCourseId) return
+    navigate('/lesson', {
+      state: {
+        goalId: goal.id,
+        nodeId: Number(currentCourseId),
+        lesson,
+      },
+    })
+  }
+
   if (canvasView === 'course_detail' && currentCourseId) {
     const course = coursePlans[currentCourseId]
     if (course) {
-      return <CourseDetail course={course} onBack={handleBackToWorkspace} />
+      return <CourseDetail course={course} onBack={handleBackToWorkspace} onStartLesson={handleStartLesson} />
     }
   }
 

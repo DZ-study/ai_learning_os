@@ -1,15 +1,27 @@
 import { ArrowLeft, BookOpen, CheckCircle2, Circle, Clock3, Timer } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type { CoursePlan } from '@/types/workspace'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import type { CoursePlan, Lesson } from '@/types/workspace'
 
 interface CourseDetailProps {
   course: CoursePlan
   onBack: () => void
+  onStartLesson: (lesson: Lesson) => void
 }
 
-export default function CourseDetail({ course, onBack }: CourseDetailProps) {
+export default function CourseDetail({ course, onBack, onStartLesson }: CourseDetailProps) {
   const { t } = useTranslation()
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
   const completedLessons = course.chapters.reduce(
     (count, chapter) => count + chapter.lessons.filter((lesson) => lesson.status === 'completed').length,
     0,
@@ -57,9 +69,15 @@ export default function CourseDetail({ course, onBack }: CourseDetailProps) {
                   <div className="mt-3">
                     {chapter.lessons.map((lesson) => (
                       <div key={lesson.id} className="flex py-2 items-center justify-between gap-2 text-sm text-[#77747a]">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 transition-colors hover:text-[#6655b3]">
                           {lesson.status === 'completed' ? <CheckCircle2 className="size-4 text-[#6bb590]" /> : <Circle className="size-4 text-[#b8b3bb]" />}
-                          <span className="truncate">{t(lesson.title, { defaultValue: lesson.title })}</span>
+                          <button
+                            type="button"
+                            className="truncate text-left hover:text-[#6655b3] cursor-pointer"
+                            onClick={() => setSelectedLesson(lesson)}
+                          >
+                            {t(lesson.title, { defaultValue: lesson.title })}
+                          </button>
                         </div>
                         {lesson.estimatedMinutes && <div className="flex items-center gap-1">
                           <Timer className="w-[20px]" />
@@ -75,6 +93,33 @@ export default function CourseDetail({ course, onBack }: CourseDetailProps) {
           ))}
         </div>
       </div>
+
+      <Dialog
+        open={selectedLesson !== null}
+        onOpenChange={(open) => { if (!open) setSelectedLesson(null) }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>开始学习</DialogTitle>
+            <DialogDescription>
+              确认现在开始学习“{selectedLesson ? t(selectedLesson.title, { defaultValue: selectedLesson.title }) : ''}”节内容吗？
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedLesson(null)}>取消</Button>
+            <Button
+              onClick={() => {
+                if (!selectedLesson) return
+                const lesson = selectedLesson
+                setSelectedLesson(null)
+                onStartLesson(lesson)
+              }}
+            >
+              确认开始
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   )
 }

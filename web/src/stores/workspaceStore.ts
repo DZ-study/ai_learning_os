@@ -22,6 +22,9 @@ interface WorkspaceState {
   currentCourseId: string | null
   canvasView: CanvasView
   zoom: number
+  currentLessonId: string | null
+  currentBlockId: string | null
+  lessonProgress: Record<string, string[]>
   selectItem: (id: string | null) => void
   openCourseDetail: (id: string) => void
   setCanvasView: (view: CanvasView) => void
@@ -35,6 +38,9 @@ interface WorkspaceState {
   setCoursePlan: (course: CoursePlan) => void
   loadNodes: (nodes: SpaceNode[]) => void
   upsertNode: (node: SpaceNode) => void
+  setCurrentLesson: (lessonId: string | null) => void
+  setCurrentBlock: (blockId: string | null) => void
+  completeBlock: (lessonId: string, blockId: string) => void
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
@@ -46,6 +52,26 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   currentCourseId: null,
   canvasView: 'workspace',
   zoom: 100,
+  currentLessonId: null,
+  currentBlockId: null,
+  lessonProgress: {},
+
+  setCurrentLesson: (lessonId) =>
+    set({ currentLessonId: lessonId, currentBlockId: null }),
+
+  setCurrentBlock: (blockId) => set({ currentBlockId: blockId }),
+
+  completeBlock: (lessonId, blockId) =>
+    set((state) => {
+      const completed = state.lessonProgress[lessonId] ?? []
+      if (completed.includes(blockId)) return state
+      return {
+        lessonProgress: {
+          ...state.lessonProgress,
+          [lessonId]: [...completed, blockId],
+        },
+      }
+    }),
 
   selectItem: (id) => set((state) => ({
     selectedItemId: id,
