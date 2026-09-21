@@ -1,8 +1,13 @@
 import { useGoalStore } from '@/stores/goalStore'
 import type { Goal, GoalCardProps } from '@/types/goal'
 import { GOAL_STATUS } from '@/utils/constants'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+
+import { deleteGoal } from '@/services/goal'
+import { goalKeys } from './queryKeys'
 
 const STATUS_STYLES: Record<Goal['status'], string> = {
   draft: 'bg-gray-100 text-gray-500',
@@ -34,6 +39,16 @@ export default function GoalCard({ data }: GoalCardProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { setCurrentGoal } = useGoalStore()
+  const queryClient = useQueryClient()
+  const deleteMutation = useMutation({
+    mutationFn: deleteGoal,
+    onSuccess: (_, deletedGoalId) => {
+      if (useGoalStore.getState().currentGoal?.id === deletedGoalId) {
+        useGoalStore.setState({ currentGoal: null })
+      }
+      void queryClient.invalidateQueries({ queryKey: goalKeys.list() })
+    },
+  })
 
   const handleClick = (goal: Goal) => {
     setCurrentGoal(goal)
@@ -58,9 +73,25 @@ export default function GoalCard({ data }: GoalCardProps) {
               </div>
               <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
                 <h3 className="text-base font-medium leading-6 text-gray-800">{goal.title}</h3>
-                <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[goal.status]}`}>
-                  {t(GOAL_STATUS[goal.status])}
-                </span>
+                <div className="flex shrink-0 items-center gap-1">
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[goal.status]}`}>
+                    {t(GOAL_STATUS[goal.status])}
+                  </span>
+                  <button
+                    type="button"
+                    className="rounded-md p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label={`删除目标 ${goal.title}`}
+                    disabled={deleteMutation.isPending}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      if (window.confirm(`确定删除目标“${goal.title}”吗？`)) {
+                        deleteMutation.mutate(goal.id)
+                      }
+                    }}
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                </div>
               </div>
             </div>
 

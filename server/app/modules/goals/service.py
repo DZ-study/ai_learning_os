@@ -47,6 +47,21 @@ class GoalService:
             raise NotFoundException("目标不存在")
         return result
 
+    async def delete_goal(self, goal_id: int, user_id: int) -> None:
+        goal = await self._repository.get_one_by_id(
+            goal_id=goal_id,
+            user_id=user_id,
+        )
+        if not goal:
+            raise NotFoundException("目标不存在")
+
+        await self.session.delete(goal)
+        try:
+            await self.session.commit()
+        except Exception:
+            await self.session.rollback()
+            raise
+
     # async def parse_goal(self, messages: str):
     # result = await self.ai_service.parse_goal(messages)
     # return result

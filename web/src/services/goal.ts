@@ -20,6 +20,10 @@ export const getGoal = (id: number) => {
   return req.get<Goal>(`/goals/${id}`)
 }
 
+export const deleteGoal = (id: number) => {
+  return req.delete(`/goals/${id}`)
+}
+
 /** Create a goal. */
 export const createGoal = (data: GoalFormValues) => {
   return req.post<Goal>('/goals/create', data)
