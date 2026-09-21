@@ -200,6 +200,7 @@ class LessonContent(TimestampMixin, Base):
     lesson_id: Mapped[int] = mapped_column(
         ForeignKey("learning_tasks.id", ondelete="CASCADE"),
         nullable=False,
+        unique=True,
         index=True,
         comment="课时ID",
     )

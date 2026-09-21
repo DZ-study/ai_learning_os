@@ -414,6 +414,7 @@ class GoalAgentService:
 
         # 7. 在一个事务中创建 GoalPlan / GoalPlanItem / LearningTask
         # 任一步失败都整体回滚，避免出现"计划成功但 LearningTask 未保存"。
+        task_ids_by_milestone: list[list[int]] = []
         try:
             # 7.1 创建 GoalPlan
             goal_plan = GoalPlan(
@@ -450,6 +451,8 @@ class GoalAgentService:
                 self.session.add(plan_item)
                 await self.session.flush()
 
+                milestone_task_ids: list[int] = []
+
                 # 7.3 为 milestone.tasks 持久化 LearningTask
                 #     创建顺序：flush GoalPlanItem -> 拿到 plan_item.id -> 创建 LearningTask
                 for task in milestone.tasks:
@@ -463,6 +466,10 @@ class GoalAgentService:
                         status="pending",
                     )
                     self.session.add(learning_task)
+                    await self.session.flush()
+                    milestone_task_ids.append(learning_task.id)
+
+                task_ids_by_milestone.append(milestone_task_ids)
 
             # 7.4 为已持久化的 GoalPlan 创建 Canvas 节点。
             #     节点与计划使用同一个 session/事务，计划相关数据任一环节失败时
@@ -478,6 +485,7 @@ class GoalAgentService:
                         goal_id=goal_id,
                         title=goal.title,
                         plan=plan_content,
+                        task_ids_by_milestone=task_ids_by_milestone,
                     ),
                     entity_type="goal_plan",
                     entity_id=goal_plan.id,
@@ -514,15 +522,26 @@ class GoalAgentService:
         }
 
     @staticmethod
-    def _course_node_content(*, goal_id: int, title: str, plan: dict) -> dict:
+    def _course_node_content(
+        *,
+        goal_id: int,
+        title: str,
+        plan: dict,
+        task_ids_by_milestone: list[list[int]],
+    ) -> dict:
         """Convert the persisted plan into the course shape consumed by the canvas."""
         chapters = []
         for milestone_index, milestone in enumerate(plan.get("milestones") or []):
             lessons = []
             for task_index, task in enumerate(milestone.get("tasks") or []):
+                task_ids = (
+                    task_ids_by_milestone[milestone_index]
+                    if milestone_index < len(task_ids_by_milestone)
+                    else []
+                )
                 lessons.append(
                     {
-                        "id": f"lesson-{goal_id}-{milestone_index}-{task_index}",
+                        "id": task_ids[task_index],
                         "title": task.get("title") or f"学习任务 {task_index + 1}",
                         "estimatedMinutes": task.get("estimated_minutes"),
                         "status": (

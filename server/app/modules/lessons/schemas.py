@@ -1,19 +1,32 @@
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 LessonStatus = Literal["pending", "in_progress", "completed"]
 
-# 一节完整课程内容必须包含的核心内容块
-REQUIRED_BLOCK_TYPES = frozenset({"explanation", "example", "quiz", "summary"})
+LessonBlockType = Literal[
+    "explanation",
+    "example",
+    "code",
+    "question",
+    "quiz",
+    "summary",
+]
 
 
-class LessonBlock(BaseModel):
-    """可扩展内容块，type 不限定（explanation/example/quiz/summary/text/code 等）。"""
+class GeneratedLessonBlock(BaseModel):
+    """LLM structured output block; array position defines teaching order."""
 
-    type: str
-    data: dict[str, Any] = Field(default_factory=dict)
+    type: LessonBlockType
+    title: str
+    content: dict[str, Any] = Field(default_factory=dict)
+
+
+class LessonBlock(GeneratedLessonBlock):
+    """Persisted lesson block with an application-assigned order."""
+
+    order: int = Field(ge=1)
 
 
 class LessonInfoResponse(BaseModel):
@@ -37,14 +50,7 @@ class GeneratedLessonContent(BaseModel):
     """LLM 结构化输出的校验模型。"""
 
     title: str
-    blocks: list[LessonBlock]
-
-    @model_validator(mode="after")
-    def _require_core_blocks(self) -> "GeneratedLessonContent":
-        missing = REQUIRED_BLOCK_TYPES - {block.type for block in self.blocks}
-        if missing:
-            raise ValueError(f"缺少必需内容块: {', '.join(sorted(missing))}")
-        return self
+    blocks: list[GeneratedLessonBlock]
 
 
 class LessonContentResponse(BaseModel):

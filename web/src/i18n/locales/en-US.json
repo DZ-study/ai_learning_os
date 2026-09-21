@@ -21,7 +21,12 @@
     "input_placeholder": "Explain recursion with a cooking metaphor",
     "guidance": "What would you like to learn today?",
     "inspiration": "Inspiration",
-    "suggestions": ["Learn Python from scratch", "SQL for product managers", "Master photo composition in 30 days", "Build a personal site with React"],
+    "suggestions": [
+      "Learn Python from scratch",
+      "SQL for product managers",
+      "Master photo composition in 30 days",
+      "Build a personal site with React"
+    ],
     "footer": "Pilot · Your AI learning companion"
   },
   "auth": {
@@ -176,7 +181,7 @@
     "space": "Space",
     "current_space": "Current Learning Space",
     "content": "Content",
-    "courseNav": "Course",
+    "courseNav": "Learning Plan",
     "recent": "Recent",
     "search_placeholder": "Search learning content…",
     "library": "Resource Library",

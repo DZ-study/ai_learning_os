@@ -1,10 +1,10 @@
 export type LessonBlockType =
-  | 'text'
-  | 'image'
+  | 'explanation'
+  | 'example'
   | 'code'
-  | 'video'
+  | 'question'
   | 'quiz'
-  | 'exercise'
+  | 'summary'
 
 export interface TextBlockData {
   markdown: string
@@ -28,15 +28,21 @@ export type LessonBlockData =
   | Record<string, unknown>
 
 export interface LessonBlock {
-  id: string
+  id?: string
   type: LessonBlockType
   title: string
-  data: LessonBlockData
+  content: LessonBlockData
+  order: number
 }
 
 export interface LessonContent {
-  id: string
-  lessonId: string
+  id: number
+  lessonId: number
   title: string
   blocks: LessonBlock[]
+}
+
+export interface LessonContentNotGenerated {
+  status: 'not_generated'
+  content: null
 }

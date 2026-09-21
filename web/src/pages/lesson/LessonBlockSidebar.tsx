@@ -1,15 +1,15 @@
-import { CheckCircle2, Circle, Code2, FileText, FlaskConical, HelpCircle } from 'lucide-react'
+import { CheckCircle2, Circle, Code2, FileText, HelpCircle, MessageCircle, ListChecks } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import type { LessonBlock, LessonBlockType } from '@/types/lesson'
 
 const BLOCK_TYPE_META: Record<LessonBlockType, { label: string; icon: typeof FileText }> = {
-  text: { label: '讲解', icon: FileText },
-  image: { label: '图片', icon: FileText },
-  code: { label: '示例', icon: Code2 },
-  video: { label: '视频', icon: FileText },
+  explanation: { label: '讲解', icon: FileText },
+  example: { label: '示例', icon: FileText },
+  code: { label: '代码', icon: Code2 },
+  question: { label: '思考', icon: MessageCircle },
   quiz: { label: '测验', icon: HelpCircle },
-  exercise: { label: '练习', icon: FlaskConical },
+  summary: { label: '总结', icon: ListChecks },
 }
 
 interface LessonBlockSidebarProps {

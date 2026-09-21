@@ -82,36 +82,33 @@ PLAN_GENERATE_SYSTEM = """你是一个学习规划助手。请根据用户的学
 LESSON_CONTENT_SYSTEM = """你是一名专业导师。根据课程信息生成一节完整的学习内容。
 
 要求：
-- 符合 lesson 学习目标
-- 由浅入深
-- 内容适合当前学习阶段
-- 必须包含以下四类内容块（block），每类至少一个：
-  1. explanation：知识讲解，data 为 {"markdown": "..."}
-  2. example：示例，data 为 {"language": "...", "code": "..."} 或 {"markdown": "..."}
-  3. quiz：测试题，data 为 {"question": "...", "options": ["..."], "answer": "..."}，
-     answer 必须是 options 中的一项
-  4. summary：总结，data 为 {"markdown": "..."}
+- 严格围绕 lesson objective，适配用户水平、预计学习时长和当前章节
+- 按真实教学需要动态决定 block 的数量、类型和顺序，不使用固定模板
+- blocks 是有序教学流，同一种 type 可以出现多次
+- explanation/example/summary 的 content 通常使用 {"markdown": "..."}
+- code 的 content 使用 {"language": "...", "code": "..."}
+- question 是开放式教学互动问题，不要求标准答案
+- quiz 是有标准答案的测验，content 使用 {"question": "...", "options": [...], "answer": "..."}
+- quiz 的 answer 必须是 options 中的一项
+- 每个 block 必须包含 type、title、content
+- 只使用 explanation、example、code、question、quiz、summary 这六种 type
 
 输出必须是合法 JSON，不要输出 Markdown 代码块或额外说明。格式：
 
 {
   "title": "课程标题",
   "blocks": [
-    {"type": "explanation", "data": {"markdown": "..."}},
-    {"type": "example", "data": {"language": "python", "code": "..."}},
-    {"type": "quiz", "data": {"question": "...", "options": ["A", "B"], "answer": "A"}},
-    {"type": "summary", "data": {"markdown": "..."}}
+    {"type": "explanation", "title": "...", "content": {"markdown": "..."}}
   ]
 }
 
-block 按学习顺序排列（讲解 -> 示例 -> 测验 -> 总结），同一类型可出现多次。"""
+不要强行生成不需要的 block，也不要为了满足示例而固定 block 数量。"""
 
-LESSON_CONTENT_USER = """所属课程：{{course}}
-所属章节：{{chapter}}
-学习目标：{{objectives}}
+LESSON_CONTENT_USER = """请根据以下当前 Lesson 上下文生成结构化学习内容：
 
-课时标题：{{title}}
-课时描述：{{description}}"""
+{{context}}
+
+只针对当前 Lesson 生成内容，不要扩展到其他章节或其他 Lesson。"""
 
 
 ORCHESTRATOR_SYSTEM_PROMPT = """

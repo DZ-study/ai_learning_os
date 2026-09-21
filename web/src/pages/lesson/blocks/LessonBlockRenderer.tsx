@@ -9,6 +9,11 @@ import CodeBlock from './CodeBlock'
 import QuizBlock from './QuizBlock'
 import TextBlock from './TextBlock'
 
+function markdownContent(content: LessonBlock['content']): string {
+  const value = content as Record<string, unknown>
+  return String(value.markdown ?? value.text ?? value.question ?? '')
+}
+
 interface LessonBlockRendererProps {
   block: LessonBlock
   onComplete: () => void
@@ -19,13 +24,21 @@ export default function LessonBlockRenderer({
   onComplete,
 }: LessonBlockRendererProps) {
   switch (block.type) {
-    case 'text':
-    case 'exercise':
-      return <TextBlock data={block.data as TextBlockData} />
+    case 'explanation':
+    case 'question':
+    case 'summary':
+      return <TextBlock data={{ markdown: markdownContent(block.content) }} />
+    case 'example': {
+      const content = block.content as Record<string, unknown>
+      if (typeof content.code === 'string') {
+        return <CodeBlock data={content as unknown as CodeBlockData} />
+      }
+      return <TextBlock data={{ markdown: markdownContent(block.content) }} />
+    }
     case 'code':
-      return <CodeBlock data={block.data as CodeBlockData} />
+      return <CodeBlock data={block.content as CodeBlockData} />
     case 'quiz':
-      return <QuizBlock data={block.data as QuizBlockData} onCorrect={onComplete} />
+      return <QuizBlock data={block.content as QuizBlockData} onCorrect={onComplete} />
     default:
       return (
         <p className="text-sm text-muted-foreground">

@@ -58,11 +58,16 @@ export default function LearningCanvas() {
 
   const handleStartLesson = (lesson: Lesson) => {
     if (!goal?.id || !currentCourseId) return
+    const lessonId = Number(lesson.id)
+    if (!Number.isInteger(lessonId) || lessonId <= 0) {
+      console.error('Cannot start Lesson with non-persistent id', lesson.id)
+      return
+    }
     navigate('/lesson', {
       state: {
         goalId: goal.id,
         nodeId: Number(currentCourseId),
-        lesson,
+        lesson: { ...lesson, id: lessonId },
       },
     })
   }

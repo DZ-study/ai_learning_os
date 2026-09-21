@@ -4,11 +4,16 @@
 依赖 LLMClient 而非具体 Provider，确保模型可替换。
 """
 
-from typing import AsyncIterator
+import logging
+from typing import AsyncIterator, TypeVar
 
 from langchain_core.language_models import BaseChatModel
+from pydantic import BaseModel
 
 from app.infrastructure.ai.schemas import LLMResponse
+
+StructuredModel = TypeVar("StructuredModel", bound=BaseModel)
+logger = logging.getLogger(__name__)
 
 
 class LLMService:
@@ -72,6 +77,46 @@ class LLMService:
         async for chunk in model.astream(messages):
             if isinstance(chunk.content, str):
                 yield chunk.content
+
+    async def structured(
+        self,
+        user_message: str,
+        *,
+        output_schema: type[StructuredModel],
+        system_prompt: str | None = None,
+    ) -> StructuredModel:
+        """Invoke the provider's structured-output interface and validate it."""
+        messages = []
+        if system_prompt:
+            messages.append(("system", system_prompt))
+        messages.append(("human", user_message))
+
+        # Lesson content is requested as JSON by the prompt.  Explicitly use
+        # JSON mode instead of relying on the provider's default function
+        # calling mode, which can produce ``None`` when no tool call is
+        # returned even though the model generated a structured response.
+        structured_model = self.model.with_structured_output(
+            output_schema,
+            method="json_mode",
+        )
+        response = await structured_model.ainvoke(messages)
+
+        # Keep this temporary diagnostic deliberately limited to the parsed
+        # response, not the prompt or conversation context.
+        logger.debug(
+            "LLM structured response: schema=%s type=%s repr=%s",
+            output_schema.__name__,
+            type(response).__name__,
+            repr(response)[:500],
+        )
+
+        if response is None:
+            raise ValueError(
+                f"Structured output returned None for {output_schema.__name__}"
+            )
+        if isinstance(response, output_schema):
+            return response
+        return output_schema.model_validate(response)
 
     # # ── 学习目标解析 ────────────────────────────
 

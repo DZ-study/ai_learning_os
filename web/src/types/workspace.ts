@@ -36,7 +36,7 @@ export interface WorkspaceItem {
 }
 
 export interface Lesson {
-  id: string
+  id: number
   title: string
   estimatedMinutes?: number
   status?: LessonStatus

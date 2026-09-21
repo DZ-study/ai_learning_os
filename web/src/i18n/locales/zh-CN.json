@@ -21,7 +21,12 @@
     "input_placeholder": "用烹饪比喻解释递归",
     "guidance": "今天想学点什么？",
     "inspiration": "灵感推荐",
-    "suggestions": ["零基础入门 Python", "产品经理学 SQL", "30 天学会摄影构图", "用 React 做一个个人网站"],
+    "suggestions": [
+      "零基础入门 Python",
+      "产品经理学 SQL",
+      "30 天学会摄影构图",
+      "用 React 做一个个人网站"
+    ],
     "footer": "Pilot · 你的 AI 学习伙伴"
   },
   "auth": {
@@ -176,7 +181,7 @@
     "space": "空间",
     "current_space": "当前学习空间",
     "content": "内容",
-    "courseNav": "课程",
+    "courseNav": "学习计划",
     "recent": "最近记录",
     "search_placeholder": "搜索学习内容…",
     "library": "资源库",

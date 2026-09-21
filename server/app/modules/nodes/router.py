@@ -34,7 +34,20 @@ async def list_nodes(
         .where(SpaceNode.goal_id == goal_id, SpaceNode.user_id == current_user.id)
         .order_by(SpaceNode.created_at)
     )
-    return list(result)
+    nodes = list(result)
+    repaired = False
+    for node in nodes:
+        repaired = (
+            await SpaceNodeService.repair_course_lesson_ids(
+                db,
+                node=node,
+                user_id=current_user.id,
+            )
+            or repaired
+        )
+    if repaired:
+        await db.commit()
+    return nodes
 
 
 @router.post("", response_model=NodeResponse, status_code=status.HTTP_201_CREATED)

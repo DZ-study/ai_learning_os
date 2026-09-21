@@ -20,6 +20,7 @@ from app.modules.agents.service import GoalAgentService
 from app.modules.agents.session.repository import AgentSessionRepository
 from app.modules.agents.session.service import AgentSessionService
 from app.modules.agents.tools.registry import ToolRegistry, build_lesson_tool_registry
+from app.modules.agents.workflow.tutor.worker import TutorWorker
 from app.modules.auth.repository import AuthRepository
 from app.modules.auth.service import AuthService
 from app.modules.goals.repository import GoalRepository
@@ -110,7 +111,11 @@ async def get_lesson_service(
     llm_service: LLMService = Depends(get_llm_service),
 ) -> LessonService:
     lesson_repository = LessonRepository(session=session)
-    return LessonService(session, repository=lesson_repository, ai_service=llm_service)
+    return LessonService(
+        session,
+        repository=lesson_repository,
+        tutor_worker=TutorWorker(llm_service),
+    )
 
 
 def get_tool_registry(

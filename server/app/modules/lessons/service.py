@@ -3,17 +3,14 @@
 """
 
 from pydantic import TypeAdapter, ValidationError
+from sqlalchemy.exc import IntegrityError
 
-from app.infrastructure.ai.parser import extract_json
-from app.infrastructure.ai.prompts.prompt import (
-    LESSON_CONTENT_SYSTEM,
-    LESSON_CONTENT_USER,
-)
-from app.infrastructure.ai.service import LLMService
+from app.modules.agents.workflow.tutor.schemas import TutorLessonContext
+from app.modules.agents.workflow.tutor.worker import TutorWorker
 from app.modules.goals.models import LearningTask, LessonContent
 from app.modules.lessons.repository import LessonRepository
 from app.modules.lessons.schemas import (
-    GeneratedLessonContent,
+    LessonBlock,
     LessonContentNotGenerated,
     LessonContentResponse,
     LessonInfoResponse,
@@ -22,7 +19,6 @@ from app.modules.lessons.schemas import (
 from app.shared.exceptions import (
     BadRequestException,
     NotFoundException,
-    ServiceUnavailableException,
 )
 
 _status_adapter: TypeAdapter[LessonStatus] = TypeAdapter(LessonStatus)
@@ -30,11 +26,15 @@ _status_adapter: TypeAdapter[LessonStatus] = TypeAdapter(LessonStatus)
 
 class LessonService:
     def __init__(
-        self, session, repository: LessonRepository, ai_service: LLMService
+        self,
+        session,
+        repository: LessonRepository,
+        tutor_worker: TutorWorker | None = None,
+        ai_service=None,
     ) -> None:
         self.session = session
         self._repository = repository
-        self._ai_service = ai_service
+        self._tutor_worker = tutor_worker or TutorWorker(ai_service)
 
     async def get_content(
         self, lesson_id: int, user_id: int
@@ -60,14 +60,69 @@ class LessonService:
             if task.plan_item_id
             else None
         )
-
-        generated = await self._generate(task, goal, plan_item)
-
-        content = await self._repository.create_content(
-            lesson_id=task.id,
-            blocks=[block.model_dump() for block in generated.blocks],
+        get_active_plan = getattr(self._repository, "get_active_plan", None)
+        plan = (
+            await get_active_plan(task.goal_id, user_id)
+            if get_active_plan
+            else None
         )
-        await self.session.commit()
+        get_recent_context = getattr(self._repository, "get_recent_context", None)
+        learning_context = (
+            await get_recent_context(user_id=user_id, goal_id=task.goal_id)
+            if get_recent_context
+            else {}
+        )
+
+        generated = await self._tutor_worker.generate(
+            TutorLessonContext(
+                goal={
+                    "title": goal.title if goal else "",
+                    "description": goal.description if goal else None,
+                    "duration": goal.duration if goal else None,
+                    "available_time": goal.available_time if goal else None,
+                },
+                plan={
+                    "id": plan.id if plan else None,
+                    "version": plan.version if plan else None,
+                    "summary": (plan.content or {}).get("summary") if plan else None,
+                },
+                chapter={
+                    "id": plan_item.id if plan_item else None,
+                    "title": plan_item.title if plan_item else "",
+                    "objective": plan_item.objective if plan_item else "",
+                },
+                lesson={
+                    "id": task.id,
+                    "title": task.title,
+                    "description": task.description,
+                    "estimated_minutes": task.estimated_minutes,
+                    "status": task.status,
+                },
+                learning_context={
+                    "lesson_status": task.status,
+                    **learning_context,
+                },
+            )
+        )
+
+        try:
+            content = await self._repository.create_content(
+                lesson_id=task.id,
+                blocks=[
+                    LessonBlock(
+                        **block.model_dump(),
+                        order=order,
+                    ).model_dump()
+                    for order, block in enumerate(generated.blocks, start=1)
+                ],
+            )
+            await self.session.commit()
+        except IntegrityError:
+            await self.session.rollback()
+            existing = await self._repository.get_content(lesson_id)
+            if existing:
+                return self._to_response(task, existing)
+            raise
         return self._to_response(task, content)
 
     async def get_lesson_info(self, lesson_id: int, user_id: int) -> LessonInfoResponse:
@@ -92,31 +147,6 @@ class LessonService:
         if not task:
             raise NotFoundException("课时不存在")
         return task
-
-    async def _generate(self, task, goal, plan_item) -> GeneratedLessonContent:
-        user_prompt = (
-            LESSON_CONTENT_USER.replace("{{course}}", goal.title if goal else "")
-            .replace("{{chapter}}", plan_item.title if plan_item else "")
-            .replace("{{objectives}}", plan_item.objective if plan_item else "")
-            .replace("{{title}}", task.title)
-            .replace("{{description}}", task.description or "")
-        )
-
-        # LLM 输出格式异常时重试一次
-        for _ in range(2):
-            try:
-                response = await self._ai_service.chat(
-                    user_prompt, system_prompt=LESSON_CONTENT_SYSTEM
-                )
-                return GeneratedLessonContent.model_validate(
-                    extract_json(response.content)
-                )
-            except (ValueError, ValidationError):
-                continue
-            except Exception as e:
-                raise ServiceUnavailableException("内容生成失败，请稍后再试") from e
-
-        raise ServiceUnavailableException("内容生成失败，请稍后再试")
 
     @staticmethod
     def _to_response(
