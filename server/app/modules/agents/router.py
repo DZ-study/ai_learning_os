@@ -8,8 +8,7 @@ from app.core.dependencies import (
     get_goal_agent_service,
     get_orchestrator,
 )
-from app.modules.agents.contracts.context import AgentExecutionContext
-from app.modules.agents.contracts.result import AgentResultStatus
+from app.modules.agents.contracts.result import AgentResult, AgentResultStatus
 from app.modules.agents.orchestrator.service import Orchestrator
 from app.modules.agents.schemas import AgentConfirmRequest, AgentReplyRequest
 from app.modules.agents.service import GoalAgentService
@@ -39,15 +38,7 @@ async def get_session(
     )
 
 
-# @router.post("/start")
-# async def start_agent(
-#     goal_id: int,
-#     current_user: User = Depends(get_current_user),
-#     service: GoalAgentService = Depends(get_goal_agent_service),
-# ):
-#     return await service.start(goal_id=goal_id, user_id=current_user.id)
-
-
+# chat统一入口
 @router.post("/messages/stream")
 async def message_stream(
     goal_id: int,
@@ -58,12 +49,9 @@ async def message_stream(
     return StreamingResponse(
         _orchestrated_stream(
             orchestrator,
-            AgentExecutionContext(
-                user_id=str(current_user.id),
-                session_id=str(request.session_id or ""),
-                goal_id=str(goal_id),
-                user_input=request.message,
-            ),
+            goal_id,
+            current_user.id,
+            request,
         ),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
@@ -72,10 +60,20 @@ async def message_stream(
 
 async def _orchestrated_stream(
     orchestrator: Orchestrator,
-    context: AgentExecutionContext,
+    goal_id: int,
+    user_id: int,
+    request: AgentReplyRequest,
 ) -> AsyncIterator[str]:
     try:
-        result = await orchestrator.delegate("goal_planning", context)
+        context_or_error = await orchestrator._build_context(
+            goal_id=goal_id,
+            user_id=user_id,
+            request=request,
+        )
+        if isinstance(context_or_error, AgentResult):
+            result = context_or_error
+        else:
+            result = await orchestrator.execute(context_or_error)
     except Exception:
         yield GoalAgentService._event(
             "error",

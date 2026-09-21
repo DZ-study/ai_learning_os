@@ -27,5 +27,7 @@ class SpaceNode(TimestampMixin, Base):
     position: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, default=lambda: {"x": 42, "y": 78}
     )
+    entity_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    entity_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     goal = relationship("Goals", back_populates="nodes")

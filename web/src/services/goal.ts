@@ -60,9 +60,18 @@ export const completeSpaceLesson = (
   )
 }
 
-/* Generate a plan. */
-export const generatePlan = (id: number, sessionId: number): Promise<void> => {
-  return req.post(`/goals/${id}/agent/confirm`, {
+/* Confirm the pending plan: persists GoalPlan/GoalPlanItem/LearningTask/SpaceNode. */
+export interface ConfirmPlanResponse {
+  message: string
+  session_id: number
+  plan_id: number
+  stage: string
+  version: number
+  plan: Record<string, unknown>
+}
+
+export const confirmPlan = (id: number, sessionId: number) => {
+  return req.post<ConfirmPlanResponse>(`/goals/${id}/agent/confirm`, {
     session_id: sessionId
   })
 }

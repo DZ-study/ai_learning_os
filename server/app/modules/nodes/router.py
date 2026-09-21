@@ -7,6 +7,7 @@ from app.core.dependencies import get_current_user
 from app.modules.goals.models import Goals
 from app.modules.nodes.models import SpaceNode
 from app.modules.nodes.schemas import NodeCreate, NodePositionUpdate, NodeResponse
+from app.modules.nodes.service import SpaceNodeService
 from app.modules.user.models import User
 
 router = APIRouter(prefix="/goals/{goal_id}/nodes", tags=["Goal Nodes"])
@@ -45,36 +46,12 @@ async def create_node(
 ):
     await _get_owned_goal(goal_id, current_user, db)
 
-    existing_positions = await db.scalars(
-        select(SpaceNode.position).where(
-            SpaceNode.goal_id == goal_id,
-            SpaceNode.user_id == current_user.id,
-        )
-    )
-    occupied = {
-        (position.get("x"), position.get("y"))
-        for position in existing_positions
-        if isinstance(position, dict)
-    }
-    position = dict(data.position)
-    x = position.get("x", 42)
-    y = position.get("y", 78)
-    while (x, y) in occupied:
-        x += 360
-        if x > 900:
-            x = 42
-            y += 220
-    position.update(x=x, y=y)
-
-    node = SpaceNode(
+    node = await SpaceNodeService.create(
+        db,
         goal_id=goal_id,
         user_id=current_user.id,
-        type=data.type,
-        title=data.title,
-        content=data.content,
-        position=position,
+        data=data,
     )
-    db.add(node)
     await db.commit()
     await db.refresh(node)
     return node

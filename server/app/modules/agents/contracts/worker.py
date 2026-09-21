@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from .context import AgentExecutionContext
+from .context import PlanningWorkerContext
 from .result import AgentResult
 
 
@@ -11,5 +11,5 @@ class AgentWorker(Protocol):
 
     async def execute(
         self,
-        context: AgentExecutionContext,
+        context: PlanningWorkerContext,
     ) -> AgentResult: ...

@@ -1,11 +1,26 @@
-from app.modules.agents.contracts.context import AgentExecutionContext
+import logging
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.logging import configure_logging
+from app.modules.agents.contracts.context import (
+    GlobalAgentContext,
+    PlanningWorkerContext,
+)
 from app.modules.agents.contracts.result import AgentResult, AgentResultStatus
+from app.modules.agents.session.schemas import AgentSessionCreateData
+from app.modules.agents.session.service import AgentSessionService
+from app.modules.goals.models import Goals
 
 from .actions import OrchestratorAction
 from .decision import OrchestratorDecision
 from .decision_engine import LLMDecisionEngine
 from .dispatcher import AgentDispatcher
 from .policy import OrchestratorPolicy
+
+FALLBACK_TARGET_AGENT = "goal_planning"
+
+logger = logging.getLogger(__name__)
 
 
 class Orchestrator:
@@ -16,21 +31,28 @@ class Orchestrator:
         decision_engine: LLMDecisionEngine,
         dispatcher: AgentDispatcher,
         policy: OrchestratorPolicy,
+        db: AsyncSession | None = None,
+        agent_session_service: AgentSessionService | None = None,
     ) -> None:
         self.decision_engine = decision_engine
         self.dispatcher = dispatcher
         self.policy = policy
+        self.db = db
+        self.agent_session_service = agent_session_service
 
     async def execute(
         self,
-        context: AgentExecutionContext,
+        context: GlobalAgentContext,
         worker_result: AgentResult | None = None,
     ) -> AgentResult:
         decision = await self.decision_engine.decide(context, worker_result)
+        logging.info(decision)
+        if decision.action == OrchestratorAction.DELEGATE:
+            decision = self._fallback_unregistered(decision, context)
         self.policy.validate(decision)
 
         if decision.action == OrchestratorAction.DELEGATE:
-            return await self.dispatcher.dispatch(decision, context)
+            return await self._dispatch_to_worker(decision, context)
 
         if decision.action in (
             OrchestratorAction.RESUME,
@@ -65,15 +87,15 @@ class Orchestrator:
 
     async def delegate(
         self,
+        context: GlobalAgentContext,
         target_agent: str,
-        context: AgentExecutionContext,
         *,
         parameters: dict | None = None,
     ) -> AgentResult:
-        """Dispatch a known entry-point request without another LLM decision.
+        """已明确目标 Worker 的直接委派，不做意图识别。
 
-        Domain routes already know which workflow they expose.  They still go
-        through the same policy and dispatcher path as LLM-selected actions.
+        Chat 等自然语言入口必须使用 execute()，
+        由 Decision Engine 根据 user_input 决定 target_agent。
         """
 
         decision = OrchestratorDecision(
@@ -82,12 +104,123 @@ class Orchestrator:
             parameters=parameters or {},
         )
         self.policy.validate(decision)
-        return await self.dispatcher.dispatch(decision, context)
+        return await self._dispatch_to_worker(decision, context)
+
+    @staticmethod
+    def _to_planning_context(
+        context: GlobalAgentContext,
+    ) -> PlanningWorkerContext:
+        return PlanningWorkerContext(
+            user_id=context.user_id,
+            goal_id=context.goal_id or "",
+            session_id=context.session_id,
+            user_input=context.user_input,
+        )
+
+    async def _dispatch_to_worker(
+        self,
+        decision: OrchestratorDecision,
+        context: GlobalAgentContext,
+    ) -> AgentResult:
+        worker_context = self._to_planning_context(context)
+        return await self.dispatcher.dispatch(decision, worker_context)
+
+    def _fallback_unregistered(
+        self,
+        decision: OrchestratorDecision,
+        context: GlobalAgentContext,
+    ) -> OrchestratorDecision:
+        """Decision Engine 选出的 Worker 未注册时降级到默认 Worker。
+
+        原始 target_agent 保留在 context.metadata 中，供后续轮次追溯。
+        """
+
+        target_agent = decision.target_agent
+        if not target_agent or self.dispatcher.registry.has(target_agent):
+            return decision
+
+        context.metadata["original_target_agent"] = target_agent
+        context.metadata["fallback_reason"] = f"Worker not registered: {target_agent}"
+        return decision.model_copy(
+            update={"target_agent": FALLBACK_TARGET_AGENT},
+        )
+
+    # 构建全局上下文
+    async def _build_context(
+        self,
+        *,
+        goal_id: int,
+        user_id: int | None,
+        request,
+    ) -> GlobalAgentContext | AgentResult:
+        if user_id is None or request is None:
+            return self._failed("INVALID_EXECUTION_CONTEXT", "请求上下文不完整")
+
+        if self.db is None or self.agent_session_service is None:
+            raise RuntimeError("Orchestrator context dependencies are not configured")
+
+        goal = await self.db.get(Goals, goal_id)
+        if goal is None or goal.user_id != user_id:
+            return self._failed("GOAL_ACCESS_DENIED", "目标不存在或无权访问")
+
+        try:
+            agent_session = await self.agent_session_service.create_or_resume(
+                session_id=request.session_id,
+                data=AgentSessionCreateData(
+                    goal_id=goal_id,
+                    user_id=user_id,
+                    agent_type="goal_planning",
+                    context={"messages": []},
+                ),
+            )
+        except ValueError:
+            return self._failed("SESSION_ACCESS_DENIED", "Agent 会话不存在或无权访问")
+
+        if agent_session is None:
+            return self._failed("SESSION_NOT_FOUND", "Agent 会话不存在")
+
+        session_context = dict(agent_session.context or {})
+        messages = list(session_context.get("messages", []))
+
+        return GlobalAgentContext(
+            user_id=str(user_id),
+            session_id=str(agent_session.id),
+            goal_id=str(goal_id),
+            user_input=request.message,
+            conversation=messages,
+            working_memory={
+                key: value
+                for key, value in session_context.items()
+                if key != "messages"
+            },
+            environment={
+                "goal": {
+                    "title": goal.title,
+                    "description": goal.description,
+                    "duration": goal.duration,
+                    "available_time": goal.available_time,
+                }
+            },
+            metadata={
+                "agent_type": agent_session.agent_type,
+                "stage": agent_session.stage,
+                "status": agent_session.status,
+            },
+        )
+
+    @staticmethod
+    def _failed(code: str, message: str) -> AgentResult:
+        return AgentResult(
+            status=AgentResultStatus.FAILED,
+            error_code=code,
+            error_message=message,
+            message=message,
+        )
 
     async def _resume_or_retry(
         self,
         decision: OrchestratorDecision,
-        context: AgentExecutionContext,
+        context: GlobalAgentContext,
     ) -> AgentResult:
         target_agent = decision.target_agent or context.metadata.get("current_agent")
         if not target_agent:
@@ -104,5 +237,6 @@ class Orchestrator:
             reason=decision.reason,
             parameters=decision.parameters,
         )
+        delegate = self._fallback_unregistered(delegate, context)
         self.policy.validate(delegate)
-        return await self.dispatcher.dispatch(delegate, context)
+        return await self._dispatch_to_worker(delegate, context)

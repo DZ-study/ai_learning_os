@@ -1,9 +1,7 @@
 import { Button } from '@/components/ui/button'
-import { createSpaceNode, getAgentSession } from '@/services/goal'
+import { confirmPlan, getAgentSession, getSpaceNodes } from '@/services/goal'
 import { useGoalStore } from '@/stores/goalStore'
 import { useWorkspaceStore } from '@/stores/workspaceStore'
-import { getNextAvailablePosition } from '@/utils/workspace-position'
-import type { CoursePlan } from '@/types/workspace'
 import { streamSSE } from '@/utils/sse-client'
 import type {
   ChatModelAdapter,
@@ -108,36 +106,17 @@ function formatPlan(plan: AgentPlan): string {
     .join('\n\n')
 }
 
-function toCoursePlan(
-  goalId: number,
-  title: string,
-  plan: AgentPlan,
-): CoursePlan {
-  return {
-    id: `course-plan-${goalId}`,
-    title,
-    description: plan.summary ?? title,
-    status: 'ready',
-    chapters: (plan.milestones ?? []).map((milestone, index) => ({
-      id: `chapter-${goalId}-${index}`,
-      title: milestone.title ?? `学习阶段 ${index + 1}`,
-      lessons: (milestone.tasks ?? []).map((task, taskIndex) => ({
-        id: `lesson-${goalId}-${index}-${taskIndex}`,
-        title: task.title ?? `学习任务 ${taskIndex + 1}`,
-        estimatedMinutes: task.estimated_minutes,
-        status:
-          taskIndex === 0 && index === 0 ? 'available' : 'locked',
-      })),
-    })),
-  }
-}
-
 export default function ChatPanel() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [agentSessionId, setAgentSessionId] =
     useState<number | null>(null)
   const [historyLoadedGoalId, setHistoryLoadedGoalId] =
     useState<number | null>(null)
+  const [pendingPlan, setPendingPlan] = useState<{
+    sessionId: number
+    plan: AgentPlan
+  } | null>(null)
+  const [confirmingPlan, setConfirmingPlan] = useState(false)
 
   const location = useLocation()
   const navigate = useNavigate()
@@ -149,12 +128,7 @@ export default function ChatPanel() {
       : undefined
 
   const goal = useGoalStore((state) => state.currentGoal)
-  const setCoursePlan = useWorkspaceStore(
-    (state) => state.setCoursePlan,
-  )
-  const upsertNode = useWorkspaceStore(
-    (state) => state.upsertNode,
-  )
+  const loadNodes = useWorkspaceStore((state) => state.loadNodes)
 
   const { t } = useTranslation()
 
@@ -175,6 +149,7 @@ export default function ChatPanel() {
       setAgentSessionId(null)
       agentSessionIdRef.current = null
       setMessages([])
+      setPendingPlan(null)
       return
     }
 
@@ -183,6 +158,7 @@ export default function ChatPanel() {
     setAgentSessionId(null)
     agentSessionIdRef.current = null
     setMessages([])
+    setPendingPlan(null)
 
     void getAgentSession(goal.id)
       .then(({ data }) => {
@@ -292,23 +268,15 @@ export default function ChatPanel() {
               }
             }
 
-            const course = toCoursePlan(goal.id, goal.title, plan)
-            const position = getNextAvailablePosition(useWorkspaceStore.getState().items)
-            const { data: node } = await createSpaceNode(goal.id, {
-              type: 'course',
-              title: course.title,
-              content: course as unknown as Record<string, unknown>,
-              position,
-            })
-            upsertNode(node)
-            setCoursePlan({ ...course, id: String(node.id) })
+            // 计划只是 Preview：持久化与 Canvas 节点由「确认计划」后的后端事务负责。
+            setPendingPlan({ sessionId, plan })
           } else if (event.event === 'error') {
             throw new Error(event.data.message)
           }
         }
       },
     }),
-    [goal?.id, setCoursePlan, upsertNode],
+    [goal?.id],
   )
 
   /**
@@ -318,6 +286,35 @@ export default function ChatPanel() {
    * Composer 的输入状态由 assistant-ui 自己管理。
    */
   const runtime = useLocalRuntime(adapter)
+
+  /**
+   * 「确认计划」：后端 confirm_plan 事务持久化后，
+   * 重新拉取正式 SpaceNode 刷新 Canvas，不在前端手工拼装节点。
+   */
+  const handleConfirmPlan = async () => {
+    if (!goal?.id || !pendingPlan || confirmingPlan) return
+    setConfirmingPlan(true)
+    try {
+      await confirmPlan(goal.id, pendingPlan.sessionId)
+      const { data } = await getSpaceNodes(goal.id)
+      loadNodes(data)
+      setPendingPlan(null)
+    } catch (error) {
+      console.error('confirm plan failed', error)
+    } finally {
+      setConfirmingPlan(false)
+    }
+  }
+
+  /**
+   * 「调整计划」：不新增编辑页面，聚焦输入框，
+   * 用户直接说出修改意见，重新进入 Planning Worker。
+   */
+  const handleModifyPlan = () => {
+    document
+      .querySelector<HTMLTextAreaElement>('.chat-panel textarea')
+      ?.focus()
+  }
 
   /**
    * 后端历史加载完成后，同步 thread。
@@ -429,6 +426,32 @@ export default function ChatPanel() {
 
             <ThreadPrimitive.ScrollToBottom />
           </ThreadPrimitive.Viewport>
+
+          {pendingPlan && (
+            <div className="shrink-0 border-t border-[#ebe8e5] bg-[#fbfaf9] px-3 py-2.5">
+              <div className="mb-2 text-[11px] leading-4 text-[#8176a8]">
+                {t('agent.plan_ready')}
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="cursor-pointer"
+                  onClick={handleModifyPlan}
+                >
+                  {t('agent.modify_plan')}
+                </Button>
+                <Button
+                  size="sm"
+                  className="cursor-pointer"
+                  disabled={confirmingPlan}
+                  onClick={() => void handleConfirmPlan()}
+                >
+                  {t('agent.confirm_plan')}
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="shrink-0 border-t border-[#ebe8e5] bg-[#fbfaf9] p-3">
             <ComposerPrimitive.Root className="rounded-xl border border-[#e0dcda] bg-white p-2 shadow-[0_2px_8px_rgba(34,32,42,0.03)] focus-within:border-[#a99be1]">

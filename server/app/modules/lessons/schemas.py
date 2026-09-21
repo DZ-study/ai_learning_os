@@ -1,13 +1,16 @@
-from datetime import date, datetime
+from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 LessonStatus = Literal["pending", "in_progress", "completed"]
 
+# 一节完整课程内容必须包含的核心内容块
+REQUIRED_BLOCK_TYPES = frozenset({"explanation", "example", "quiz", "summary"})
+
 
 class LessonBlock(BaseModel):
-    """可扩展内容块，type 不限定（text/image/code/video/quiz/exercise 等）。"""
+    """可扩展内容块，type 不限定（explanation/example/quiz/summary/text/code 等）。"""
 
     type: str
     data: dict[str, Any] = Field(default_factory=dict)
@@ -21,7 +24,7 @@ class LessonInfoResponse(BaseModel):
     id: int
     goal_id: int
     plan_item_id: int | None
-    task_date: date
+    completed_at: datetime | None
     title: str
     description: str | None
     estimated_minutes: int
@@ -35,6 +38,13 @@ class GeneratedLessonContent(BaseModel):
 
     title: str
     blocks: list[LessonBlock]
+
+    @model_validator(mode="after")
+    def _require_core_blocks(self) -> "GeneratedLessonContent":
+        missing = REQUIRED_BLOCK_TYPES - {block.type for block in self.blocks}
+        if missing:
+            raise ValueError(f"缺少必需内容块: {', '.join(sorted(missing))}")
+        return self
 
 
 class LessonContentResponse(BaseModel):

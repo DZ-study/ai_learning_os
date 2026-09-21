@@ -1,6 +1,7 @@
 """
 课时仓库 — 封装与课时（LearningTask）及课时内容相关的数据库操作。
 """
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 
@@ -44,5 +45,8 @@ class LessonRepository:
 
     async def update_task_status(self, task: LearningTask, status: str) -> LearningTask:
         task.status = status
+        task.completed_at = (
+            datetime.now(timezone.utc) if status == "completed" else None
+        )
         await self.session.flush()
         return task

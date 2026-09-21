@@ -137,6 +137,7 @@
     "planning": "目标规划 Agent",
     "tutor": "Tutor Agent",
     "confirm_plan": "确认计划",
+    "modify_plan": "调整计划",
     "input_placeholder": "输入你的回答…",
     "starting": "正在启动…",
     "start_learning": "开始你的学习之旅吧！",

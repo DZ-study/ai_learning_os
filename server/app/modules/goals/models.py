@@ -1,7 +1,7 @@
-from datetime import date, datetime
+from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -162,8 +162,6 @@ class LearningTask(TimestampMixin, Base):
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
 
-    task_date: Mapped[date] = mapped_column(Date, nullable=False)
-
     title: Mapped[str] = mapped_column(String(255), nullable=False)
 
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -180,6 +178,8 @@ class LearningTask(TimestampMixin, Base):
         nullable=False,
         default="pending",
     )
+
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     content = relationship(
         "LessonContent",

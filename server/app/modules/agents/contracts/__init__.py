@@ -1,4 +1,4 @@
-from .context import AgentExecutionContext
+from .context import GlobalAgentContext, PlanningWorkerContext
 from .result import (
     AgentResult,
     AgentResultStatus,
@@ -7,7 +7,8 @@ from .result import (
 from .worker import AgentWorker
 
 __all__ = [
-    "AgentExecutionContext",
+    "GlobalAgentContext",
+    "PlanningWorkerContext",
     "AgentResult",
     "AgentResultStatus",
     "AgentUsage",

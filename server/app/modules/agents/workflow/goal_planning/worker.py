@@ -3,7 +3,7 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Any
 
-from app.modules.agents.contracts.context import AgentExecutionContext
+from app.modules.agents.contracts.context import PlanningWorkerContext
 from app.modules.agents.contracts.result import AgentResult, AgentResultStatus
 from app.modules.agents.contracts.worker import AgentWorker
 from app.modules.agents.schemas import AgentReplyRequest
@@ -26,7 +26,7 @@ class GoalPlanningWorker(AgentWorker):
 
     async def execute(
         self,
-        context: AgentExecutionContext,
+        context: PlanningWorkerContext,
     ) -> AgentResult:
         try:
             goal_id = self._parse_required_id(context.goal_id, "goal_id")

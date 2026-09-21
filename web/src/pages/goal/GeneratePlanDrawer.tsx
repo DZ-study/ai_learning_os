@@ -8,7 +8,7 @@ import {
   DrawerHeader,
   DrawerTitle
 } from "@/components/ui/drawer"
-import { generatePlan } from '@/services/goal'
+import { confirmPlan } from '@/services/goal'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Sparkles } from 'lucide-react'
 import { useState } from 'react'
@@ -35,7 +35,7 @@ export default function GeneratePlanDrawer({
     mutateAsync
   } = useMutation({
     mutationFn: ({ goalId, sessionId }: { goalId: number, sessionId: number }) =>
-      generatePlan(goalId, sessionId),
+      confirmPlan(goalId, sessionId),
     onSuccess: () => {
       toast.success(t("goal.plan_generated"))
       onOpenChange(false)

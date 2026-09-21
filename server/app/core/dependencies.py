@@ -144,10 +144,15 @@ def get_agent_registry(
 
 
 def get_orchestrator(
+    db: AsyncSession = Depends(get_db),
     registry: AgentRegistry = Depends(get_agent_registry),
 ) -> Orchestrator:
+    session_repository = AgentSessionRepository(db=db)
+    session_service = AgentSessionService(db=db, session_repository=session_repository)
     return Orchestrator(
         decision_engine=LLMDecisionEngine(),
         dispatcher=AgentDispatcher(registry),
         policy=OrchestratorPolicy(registry),
+        db=db,
+        agent_session_service=session_service,
     )

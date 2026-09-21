@@ -1,4 +1,4 @@
-from ..contracts.context import AgentExecutionContext
+from ..contracts.context import PlanningWorkerContext
 from ..contracts.result import AgentResult
 from ..registry.agent_registry import AgentRegistry
 from .actions import OrchestratorAction
@@ -15,7 +15,7 @@ class AgentDispatcher:
     async def dispatch(
         self,
         decision: OrchestratorDecision,
-        context: AgentExecutionContext,
+        context: PlanningWorkerContext,
     ) -> AgentResult:
 
         if decision.action != OrchestratorAction.DELEGATE:

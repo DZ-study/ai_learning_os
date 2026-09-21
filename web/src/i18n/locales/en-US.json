@@ -137,6 +137,7 @@
     "planning": "Goal Planning Agent",
     "tutor": "Tutor Agent",
     "confirm_plan": "Confirm Plan",
+    "modify_plan": "Adjust Plan",
     "input_placeholder": "Enter your answer…",
     "starting": "Starting…",
     "start_learning": "Let’s start your learning journey!",

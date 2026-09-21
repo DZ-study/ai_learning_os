@@ -18,7 +18,9 @@ from app.modules.agents.workflow.goal_planning.graph import (
     build_goal_plan_graph,
 )
 from app.modules.agents.workflow.goal_planning.state import StudyPlan
-from app.modules.goals.models import GoalPlan, GoalPlanItem, Goals
+from app.modules.goals.models import GoalPlan, GoalPlanItem, Goals, LearningTask
+from app.modules.nodes.schemas import NodeCreate
+from app.modules.nodes.service import SpaceNodeService
 from app.shared.exceptions import BadRequestException, NotFoundException
 
 logger = logging.getLogger(__name__)
@@ -284,6 +286,14 @@ class GoalAgentService:
                 "stage": "awaiting_plan_confirmation",
                 "session_id": agent_session.id,
                 "plan": jsonable_encoder(plan),
+                "message": (
+                    "我已经根据你的情况生成了学习计划。"
+                    "请确认后，我会将它正式加入学习空间。"
+                ),
+                "actions": [
+                    {"type": "confirm_plan", "label": "确认计划"},
+                    {"type": "modify_plan", "label": "调整计划"},
+                ],
             },
         )
 
@@ -310,9 +320,7 @@ class GoalAgentService:
                 description = task.get("description")
                 estimated_minutes = task.get("estimated_minutes")
                 duration = (
-                    f"（预计 {estimated_minutes} 分钟）"
-                    if estimated_minutes
-                    else ""
+                    f"（预计 {estimated_minutes} 分钟）" if estimated_minutes else ""
                 )
                 lines.append(
                     f"- **{title}**{duration}"
@@ -404,48 +412,97 @@ class GoalAgentService:
         for active_plan in active_plans:
             active_plan.status = "superseded"
 
-        # 7. 创建 GoalPlan
-        goal_plan = GoalPlan(
-            goal_id=goal_id,
-            user_id=user_id,
-            version=next_version,
-            content=plan_content,
-            status="active",
-            confirmed_at=datetime.utcnow(),
-        )
-
-        self.session.add(goal_plan)
-        await self.session.flush()
-
-        # 8. 创建 GoalPlanItem
-        for index, milestone in enumerate(
-            study_plan.milestones,
-            start=1,
-        ):
-            estimated_minutes = sum(task.estimated_minutes for task in milestone.tasks)
-
-            plan_item = GoalPlanItem(
-                plan_id=goal_plan.id,
-                phase=index,
-                title=milestone.title,
-                objective=milestone.objective,
-                estimated_minutes=estimated_minutes,
-                sort_order=index,
-                status="pending",
+        # 7. 在一个事务中创建 GoalPlan / GoalPlanItem / LearningTask
+        # 任一步失败都整体回滚，避免出现"计划成功但 LearningTask 未保存"。
+        try:
+            # 7.1 创建 GoalPlan
+            goal_plan = GoalPlan(
+                goal_id=goal_id,
+                user_id=user_id,
+                version=next_version,
+                content=plan_content,
+                status="active",
+                confirmed_at=datetime.utcnow(),
             )
 
-            self.session.add(plan_item)
+            self.session.add(goal_plan)
+            await self.session.flush()
 
-        # 9. 更新 AgentSession
-        agent_session.stage = "assigned_today"
-        agent_session.context = {
-            key: value
-            for key, value in (agent_session.context or {}).items()
-            if key != "pending_plan" and key != "last_question"
-        }
+            # 7.2 创建 GoalPlanItem 并 flush 以拿到 plan_item.id
+            for index, milestone in enumerate(
+                study_plan.milestones,
+                start=1,
+            ):
+                estimated_minutes = sum(
+                    task.estimated_minutes for task in milestone.tasks
+                )
 
-        # 10. commit
-        await self.session.commit()
+                plan_item = GoalPlanItem(
+                    plan_id=goal_plan.id,
+                    phase=index,
+                    title=milestone.title,
+                    objective=milestone.objective,
+                    estimated_minutes=estimated_minutes,
+                    sort_order=index,
+                    status="pending",
+                )
+
+                self.session.add(plan_item)
+                await self.session.flush()
+
+                # 7.3 为 milestone.tasks 持久化 LearningTask
+                #     创建顺序：flush GoalPlanItem -> 拿到 plan_item.id -> 创建 LearningTask
+                for task in milestone.tasks:
+                    learning_task = LearningTask(
+                        goal_id=goal_id,
+                        plan_item_id=plan_item.id,
+                        user_id=user_id,
+                        title=task.title,
+                        description=task.description,
+                        estimated_minutes=task.estimated_minutes,
+                        status="pending",
+                    )
+                    self.session.add(learning_task)
+
+            # 7.4 为已持久化的 GoalPlan 创建 Canvas 节点。
+            #     节点与计划使用同一个 session/事务，计划相关数据任一环节失败时
+            #     会一起回滚，避免出现业务数据与 Canvas 数据不一致。
+            await SpaceNodeService.create(
+                self.session,
+                goal_id=goal_id,
+                user_id=user_id,
+                data=NodeCreate(
+                    type="course",
+                    title=goal.title,
+                    content=self._course_node_content(
+                        goal_id=goal_id,
+                        title=goal.title,
+                        plan=plan_content,
+                    ),
+                    entity_type="goal_plan",
+                    entity_id=goal_plan.id,
+                ),
+            )
+
+            # 8. 更新 AgentSession
+            agent_session.stage = "assigned_today"
+            agent_session.context = {
+                key: value
+                for key, value in (agent_session.context or {}).items()
+                if key != "pending_plan" and key != "last_question"
+            }
+
+            # 9. 一次性提交整个事务
+            await self.session.commit()
+        except Exception:
+            # 任意环节失败都要回滚，避免 GoalPlan / GoalPlanItem 已写入但 LearningTask 缺失
+            await self.session.rollback()
+            logger.exception(
+                "confirm_plan persistence failed, goal_id=%s, session_id=%s",
+                goal_id,
+                session_id,
+            )
+            raise
 
         return {
             "message": "学习计划已确认",
@@ -454,4 +511,40 @@ class GoalAgentService:
             "stage": agent_session.stage,
             "version": goal_plan.version,
             "plan": plan_content,
+        }
+
+    @staticmethod
+    def _course_node_content(*, goal_id: int, title: str, plan: dict) -> dict:
+        """Convert the persisted plan into the course shape consumed by the canvas."""
+        chapters = []
+        for milestone_index, milestone in enumerate(plan.get("milestones") or []):
+            lessons = []
+            for task_index, task in enumerate(milestone.get("tasks") or []):
+                lessons.append(
+                    {
+                        "id": f"lesson-{goal_id}-{milestone_index}-{task_index}",
+                        "title": task.get("title") or f"学习任务 {task_index + 1}",
+                        "estimatedMinutes": task.get("estimated_minutes"),
+                        "status": (
+                            "available"
+                            if milestone_index == 0 and task_index == 0
+                            else "locked"
+                        ),
+                    }
+                )
+            chapters.append(
+                {
+                    "id": f"chapter-{goal_id}-{milestone_index}",
+                    "title": milestone.get("title")
+                    or f"学习阶段 {milestone_index + 1}",
+                    "lessons": lessons,
+                }
+            )
+
+        return {
+            "id": f"course-plan-{goal_id}",
+            "title": title,
+            "description": plan.get("summary") or title,
+            "status": "ready",
+            "chapters": chapters,
         }

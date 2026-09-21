@@ -3,7 +3,7 @@ from typing import Any
 
 
 @dataclass(slots=True)
-class AgentExecutionContext:
+class GlobalAgentContext:
     """
     Worker 执行上下文。
 
@@ -27,5 +27,14 @@ class AgentExecutionContext:
     # 环境感知记忆
     environment: dict[str, Any] = field(default_factory=dict)
 
-    #
     metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
+class PlanningWorkerContext:
+    """Minimal context exposed to the goal-planning worker."""
+
+    user_id: str
+    goal_id: str
+    session_id: str
+    user_input: str | None = None
