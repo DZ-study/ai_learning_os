@@ -1,3 +1,4 @@
+import Logo from "@/assets/svg/logo.svg?react";
 import Header from '@/components/layout/Header';
 
 import FileUpload from '@/components/FileUpload';
@@ -7,7 +8,7 @@ import useFileUpload from '@/hooks/useFileUpload';
 import useGreeting from '@/hooks/useGreet';
 import { createGoal } from '@/services/goal';
 import { useGoalStore } from '@/stores/goalStore';
-import { ArrowUp, Sparkles } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -108,7 +109,7 @@ export default function ChatInterface() {
 
         <div className="mt-6 flex w-full flex-col items-center gap-3">
           <div className="flex items-center gap-1.5 text-xs text-gray-400">
-            <Sparkles className="h-3.5 w-3.5 text-violet-400" />
+            <Logo className="h-3.5 w-3.5 text-(--primary)" />
             {t("home.inspiration")}
           </div>
           <div className="flex flex-wrap justify-center gap-2.5">
@@ -127,7 +128,7 @@ export default function ChatInterface() {
       </div>
       <GoalList />
     </main>
-    <footer className="pb-6 text-center text-xs text-gray-400">
+    <footer className="pb-6 text-center text-sm text-gray-400">
       {t("home.footer")}
     </footer>
   </div>

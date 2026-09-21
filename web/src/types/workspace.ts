@@ -16,6 +16,9 @@ export interface SpaceNode {
   title: string
   content: Record<string, unknown>
   position: WorkspaceItemPosition
+  entity_type?: 'goal_plan' | 'goal_item' | 'learning_task' | null
+  entity_id?: number | null
+  course_plan?: CoursePlan | null
 }
 
 export type CoursePlanStatus = 'generating' | 'ready' | 'error'

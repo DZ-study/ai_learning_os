@@ -1,31 +1,24 @@
 import { useGoalStore } from '@/stores/goalStore'
 import type { Goal, GoalCardProps } from '@/types/goal'
-import { GOAL_STATUS } from '@/utils/constants'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Trash2 } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
+import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { deleteGoal } from '@/services/goal'
+import { GOAL_ICONS } from '@/utils/constants'
 import { goalKeys } from './queryKeys'
 
-const STATUS_STYLES: Record<Goal['status'], string> = {
-  draft: 'bg-gray-100 text-gray-500',
-  active: 'bg-blue-50 text-blue-600',
-  paused: 'bg-amber-50 text-amber-600',
-  completed: 'bg-emerald-50 text-emerald-600',
-  archived: 'bg-gray-100 text-gray-400',
-}
-
-const GOAL_ICONS: Array<{ keywords: string[]; icon: string; className: string }> = [
-  { keywords: ['react'], icon: '⚛️', className: 'bg-sky-50' },
-  { keywords: ['python'], icon: '🐍', className: 'bg-emerald-50' },
-  { keywords: ['sql', '数据库', '数据'], icon: '🗄️', className: 'bg-indigo-50' },
-  { keywords: ['摄影', '拍照', 'photo'], icon: '📷', className: 'bg-rose-50' },
-  { keywords: ['英语', 'english', '外语'], icon: '🗣️', className: 'bg-amber-50' },
-  { keywords: ['设计', 'design'], icon: '🎨', className: 'bg-violet-50' },
-  { keywords: ['健身', '运动', '跑步'], icon: '🏃', className: 'bg-lime-50' },
-]
 
 const getGoalIcon = (title: string) => {
   const lower = title.toLowerCase()
@@ -39,6 +32,7 @@ export default function GoalCard({ data }: GoalCardProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { setCurrentGoal } = useGoalStore()
+  const [goalToDelete, setGoalToDelete] = useState<Goal | null>(null)
   const queryClient = useQueryClient()
   const deleteMutation = useMutation({
     mutationFn: deleteGoal,
@@ -46,6 +40,7 @@ export default function GoalCard({ data }: GoalCardProps) {
       if (useGoalStore.getState().currentGoal?.id === deletedGoalId) {
         useGoalStore.setState({ currentGoal: null })
       }
+      setGoalToDelete(null)
       void queryClient.invalidateQueries({ queryKey: goalKeys.list() })
     },
   })
@@ -65,7 +60,7 @@ export default function GoalCard({ data }: GoalCardProps) {
           <div
             key={goal.id}
             onClick={() => handleClick(goal)}
-            className="flex cursor-pointer flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_1px_4px_rgba(0,0,0,0.03)] transition-all duration-200 hover:-translate-y-1 hover:border-indigo-100 hover:shadow-[0_12px_32px_rgba(99,102,241,0.14)]"
+            className="group flex cursor-pointer flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_1px_4px_rgba(0,0,0,0.03)] transition-all duration-200 hover:-translate-y-1 hover:border-indigo-100 hover:shadow-[0_12px_32px_rgba(99,102,241,0.14)]"
           >
             <div className="flex items-start gap-3">
               <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg ${iconClassName}`}>
@@ -74,19 +69,21 @@ export default function GoalCard({ data }: GoalCardProps) {
               <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
                 <h3 className="text-base font-medium leading-6 text-gray-800">{goal.title}</h3>
                 <div className="flex shrink-0 items-center gap-1">
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[goal.status]}`}>
+                  {/* <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[goal.status]}`}>
                     {t(GOAL_STATUS[goal.status])}
-                  </span>
+                  </span> */}
                   <button
                     type="button"
-                    className="rounded-md p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="
+                      invisible cursor-pointer rounded-md p-1 text-gray-400 opacity-0 transition-all
+                      group-hover:visible group-hover:opacity-100
+                      hover:bg-red-50 hover:text-red-500 focus-visible:visible focus-visible:opacity-100
+                      disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label={`删除目标 ${goal.title}`}
                     disabled={deleteMutation.isPending}
                     onClick={(event) => {
                       event.stopPropagation()
-                      if (window.confirm(`确定删除目标“${goal.title}”吗？`)) {
-                        deleteMutation.mutate(goal.id)
-                      }
+                      setGoalToDelete(goal)
                     }}
                   >
                     <Trash2 className="size-4" />
@@ -114,6 +111,46 @@ export default function GoalCard({ data }: GoalCardProps) {
           </div>
         )
       })}
+
+      <AlertDialog
+        open={goalToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open && !deleteMutation.isPending) setGoalToDelete(null)
+        }}
+      >
+        <AlertDialogContent onClick={(event) => event.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确定删除这个学习目标吗？</AlertDialogTitle>
+            <AlertDialogDescription>
+              删除「{goalToDelete?.title ?? ''}」后，与该目标相关的学习计划和学习数据也将被删除，此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={deleteMutation.isPending}
+              onClick={(event) => {
+                event.stopPropagation()
+                setGoalToDelete(null)
+              }}
+            >
+              取消
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleteMutation.isPending || !goalToDelete}
+              onClick={(event) => {
+                event.stopPropagation()
+                if (goalToDelete) deleteMutation.mutate(goalToDelete.id)
+              }}
+            >
+              {deleteMutation.isPending ? '删除中...' : '确认删除'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

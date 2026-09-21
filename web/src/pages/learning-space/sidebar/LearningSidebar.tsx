@@ -1,3 +1,4 @@
+import Logo from '@/components/layout/Logo'
 import {
   Sidebar,
   SidebarContent,
@@ -12,11 +13,11 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from '@/components/ui/sidebar'
-import { useWorkspaceStore } from '@/stores/workspaceStore'
 import { useGoalStore } from '@/stores/goalStore'
-import { BookOpen, FileText, Headphones, Layers3, Search, Sparkles } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useWorkspaceStore } from '@/stores/workspaceStore'
+import { BookOpen, FileText, Headphones, Layers3, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 
 const recentNotes: any[] = []
 
@@ -34,14 +35,7 @@ export default function LearningSidebar() {
   return (
     <Sidebar collapsible="icon" variant="sidebar" className="h-full">
       <SidebarHeader className="h-[66px] justify-center border-b border-[#ebe8e5] bg-[#faf9f7] px-3">
-        <div className="flex items-center gap-2.5">
-          <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#232d49] text-white shadow-sm">
-            <Sparkles className="size-4" />
-          </div>
-          <span className="truncate font-serif text-[20px] tracking-[-0.03em] text-[#25324c] group-data-[collapsible=icon]:hidden">
-            Pilot
-          </span>
-        </div>
+        <Logo />
       </SidebarHeader>
 
       <SidebarContent className="bg-[#faf9f7]">

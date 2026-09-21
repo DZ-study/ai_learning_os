@@ -1,18 +1,25 @@
-import Logo from "@/assets/svg/logo.svg?react"
+
 import { Button } from "@/components/ui/button"
 import { useCurrentModule } from '@/hooks/useCurrentModule'
 import { useThemeStore } from "@/stores/themeStore"
 import { CircleUser, Languages, Moon, Sun } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { useNavigate } from 'react-router-dom'
+import Logo from './Logo'
 
 
 export default function Header() {
   const { t, i18n } = useTranslation()
   const { theme, toggle: toggleTheme } = useThemeStore()
+  const navigate = useNavigate()
 
   const toggleLang = () => {
     const next = i18n.language === "zh-CN" ? "en-US" : "zh-CN"
     i18n.changeLanguage(next)
+  }
+
+  const handleClick = () => {
+    navigate("/")
   }
 
   const { label } = useCurrentModule()
@@ -20,12 +27,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 flex h-16 shrink-0 items-center justify-between border-b border-border bg-background pl-2 pr-4">
       <div className="flex items-center">
-        {/* <SidebarTrigger className="cursor-pointer" /> */}
-        <div className="flex items-center gap-2">
-          {/* {label} */}
-          <Logo className="size-6 shrink-0" />
-          <h2 className="text-2xl font-semibold">Pilot</h2>
-        </div>
+        <Logo />
       </div>
       <div className="flex items-center gap-1">
         {/* Language toggle */}

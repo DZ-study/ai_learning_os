@@ -5,6 +5,8 @@ from pydantic import BaseModel, ConfigDict, Field
 NodeType = Literal["course", "note", "document"]
 
 EntityType = Literal["goal_plan", "goal_item", "learning_task"]
+CoursePlanStatus = Literal["generating", "ready", "error"]
+CourseLessonStatus = Literal["locked", "available", "completed"]
 
 
 class NodeCreate(BaseModel):
@@ -20,9 +22,33 @@ class NodePositionUpdate(BaseModel):
     position: dict[str, Any]
 
 
+class CourseLessonResponse(BaseModel):
+    id: int
+    title: str
+    estimated_minutes: int | None = Field(
+        default=None, serialization_alias="estimatedMinutes"
+    )
+    status: CourseLessonStatus
+
+
+class CourseChapterResponse(BaseModel):
+    id: str
+    title: str
+    lessons: list[CourseLessonResponse]
+
+
+class CoursePlanResponse(BaseModel):
+    id: str
+    title: str
+    description: str | None = None
+    chapters: list[CourseChapterResponse]
+    status: CoursePlanStatus
+
+
 class NodeResponse(NodeCreate):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     goal_id: int
     user_id: int
+    course_plan: CoursePlanResponse | None = None

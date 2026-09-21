@@ -4,7 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database.session import get_db
 from app.core.dependencies import get_current_user
-from app.modules.goals.models import Goals
+from datetime import datetime, timezone
+
+from app.modules.goals.models import GoalPlanItem, Goals, LearningTask
 from app.modules.nodes.models import SpaceNode
 from app.modules.nodes.schemas import NodeCreate, NodePositionUpdate, NodeResponse
 from app.modules.nodes.service import SpaceNodeService
@@ -35,19 +37,7 @@ async def list_nodes(
         .order_by(SpaceNode.created_at)
     )
     nodes = list(result)
-    repaired = False
-    for node in nodes:
-        repaired = (
-            await SpaceNodeService.repair_course_lesson_ids(
-                db,
-                node=node,
-                user_id=current_user.id,
-            )
-            or repaired
-        )
-    if repaired:
-        await db.commit()
-    return nodes
+    return [await SpaceNodeService.to_response(db, node) for node in nodes]
 
 
 @router.post("", response_model=NodeResponse, status_code=status.HTTP_201_CREATED)
@@ -67,7 +57,7 @@ async def create_node(
     )
     await db.commit()
     await db.refresh(node)
-    return node
+    return await SpaceNodeService.to_response(db, node)
 
 
 @router.patch("/{node_id}/position", response_model=NodeResponse)
@@ -92,7 +82,7 @@ async def update_node_position(
     node.position = data.position
     await db.commit()
     await db.refresh(node)
-    return node
+    return await SpaceNodeService.to_response(db, node)
 
 
 @router.post("/{node_id}/lessons/{lesson_id}/complete", response_model=NodeResponse)
@@ -114,33 +104,29 @@ async def complete_node_lesson(
     if node is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="节点不存在")
 
-    content = dict(node.content or {})
-    chapters = content.get("chapters")
-    lesson_found = False
-    if isinstance(chapters, list):
-        updated_chapters = []
-        for chapter in chapters:
-            if not isinstance(chapter, dict):
-                updated_chapters.append(chapter)
-                continue
-            updated_chapter = dict(chapter)
-            lessons = chapter.get("lessons")
-            if isinstance(lessons, list):
-                updated_lessons = []
-                for lesson in lessons:
-                    if isinstance(lesson, dict) and str(lesson.get("id")) == lesson_id:
-                        updated_lessons.append({**lesson, "status": "completed"})
-                        lesson_found = True
-                    else:
-                        updated_lessons.append(lesson)
-                updated_chapter["lessons"] = updated_lessons
-            updated_chapters.append(updated_chapter)
-        content["chapters"] = updated_chapters
-
-    if not lesson_found:
+    if node.entity_type != "goal_plan" or node.entity_id is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="课时不存在")
 
-    node.content = content
+    try:
+        lesson_pk = int(lesson_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="课时不存在") from exc
+
+    task = await db.scalar(
+        select(LearningTask).where(
+            LearningTask.id == lesson_pk,
+            LearningTask.goal_id == goal_id,
+            LearningTask.user_id == current_user.id,
+            LearningTask.plan_item_id.in_(
+                select(GoalPlanItem.id).where(GoalPlanItem.plan_id == node.entity_id)
+            ),
+        )
+    )
+    if task is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="课时不存在")
+
+    task.status = "completed"
+    task.completed_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(node)
-    return node
+    return await SpaceNodeService.to_response(db, node)

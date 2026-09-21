@@ -3,7 +3,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.goals.models import GoalPlan, GoalPlanItem, LearningTask
 from app.modules.nodes.models import SpaceNode
-from app.modules.nodes.schemas import NodeCreate
+from app.modules.nodes.schemas import (
+    CourseChapterResponse,
+    CourseLessonResponse,
+    CoursePlanResponse,
+    NodeCreate,
+    NodeResponse,
+)
 
 
 class SpaceNodeService:
@@ -68,78 +74,105 @@ class SpaceNodeService:
         return node
 
     @staticmethod
-    async def repair_course_lesson_ids(
-        db: AsyncSession,
-        *,
-        node: SpaceNode,
-        user_id: int,
-    ) -> bool:
-        """Repair legacy course nodes that stored synthetic Lesson IDs."""
-        if node.type != "course":
-            return False
-
-        plan_id = node.entity_id if node.entity_type == "goal_plan" else None
-        if plan_id is None:
-            plan_id = await db.scalar(
-                select(GoalPlan.id)
-                .where(
-                    GoalPlan.goal_id == node.goal_id,
-                    GoalPlan.user_id == user_id,
-                    GoalPlan.status == "active",
-                )
-                .order_by(GoalPlan.version.desc())
-                .limit(1)
+    async def to_response(db: AsyncSession, node: SpaceNode) -> NodeResponse:
+        """Serialize a node and derive course data from its referenced plan."""
+        course_plan = None
+        if node.type == "course" and node.entity_type == "goal_plan" and node.entity_id:
+            course_plan = await SpaceNodeService.get_course_plan(
+                db, node.entity_id, node.goal_id, node.user_id, node.title
             )
-        if plan_id is None:
-            return False
+
+        return NodeResponse(
+            id=node.id,
+            goal_id=node.goal_id,
+            user_id=node.user_id,
+            type=node.type,
+            title=node.title,
+            content=node.content or {},
+            position=node.position or {},
+            entity_type=node.entity_type,
+            entity_id=node.entity_id,
+            course_plan=course_plan,
+        )
+
+    @staticmethod
+    async def get_course_plan(
+        db: AsyncSession,
+        plan_id: int,
+        goal_id: int,
+        user_id: int,
+        node_title: str,
+    ) -> CoursePlanResponse | None:
+        plan = await db.scalar(
+            select(GoalPlan).where(
+                GoalPlan.id == plan_id,
+                GoalPlan.goal_id == goal_id,
+                GoalPlan.user_id == user_id,
+            )
+        )
+        if plan is None:
+            return None
 
         items = list(
             await db.scalars(
                 select(GoalPlanItem)
-                .where(GoalPlanItem.plan_id == plan_id)
+                .where(GoalPlanItem.plan_id == plan.id)
                 .order_by(GoalPlanItem.sort_order, GoalPlanItem.id)
             )
         )
-        if not items:
-            return False
-
-        tasks = list(
-            await db.scalars(
-                select(LearningTask)
-                .where(
-                    LearningTask.goal_id == node.goal_id,
-                    LearningTask.user_id == user_id,
-                    LearningTask.plan_item_id.in_([item.id for item in items]),
+        item_ids = [item.id for item in items]
+        tasks = []
+        if item_ids:
+            tasks = list(
+                await db.scalars(
+                    select(LearningTask)
+                    .where(
+                        LearningTask.goal_id == goal_id,
+                        LearningTask.user_id == user_id,
+                        LearningTask.plan_item_id.in_(item_ids),
+                    )
+                    .order_by(LearningTask.plan_item_id, LearningTask.id)
                 )
-                .order_by(LearningTask.plan_item_id, LearningTask.id)
             )
-        )
+
         tasks_by_item: dict[int, list[LearningTask]] = {item.id: [] for item in items}
         for task in tasks:
             if task.plan_item_id in tasks_by_item:
                 tasks_by_item[task.plan_item_id].append(task)
 
-        content = dict(node.content or {})
-        chapters = content.get("chapters")
-        if not isinstance(chapters, list):
-            return False
+        chapters = []
+        for item in items:
+            lessons = tasks_by_item[item.id]
+            chapters.append(
+                CourseChapterResponse(
+                    id=f"chapter-{plan.id}-{item.id}",
+                    title=item.title,
+                    lessons=[
+                        CourseLessonResponse(
+                            id=task.id,
+                            title=task.title,
+                            estimated_minutes=task.estimated_minutes,
+                            status=(
+                                "completed"
+                                if task.status == "completed"
+                                else "available"
+                                if not any(
+                                    previous.status != "completed"
+                                    for previous in lessons[:index]
+                                )
+                                else "locked"
+                            ),
+                        )
+                        for index, task in enumerate(lessons)
+                    ],
+                )
+            )
 
-        changed = False
-        for chapter_index, chapter in enumerate(chapters):
-            if chapter_index >= len(items) or not isinstance(chapter, dict):
-                continue
-            lessons = chapter.get("lessons")
-            if not isinstance(lessons, list):
-                continue
-            chapter_tasks = tasks_by_item[items[chapter_index].id]
-            for lesson_index, lesson in enumerate(lessons):
-                if lesson_index >= len(chapter_tasks) or not isinstance(lesson, dict):
-                    continue
-                real_id = chapter_tasks[lesson_index].id
-                if lesson.get("id") != real_id:
-                    lesson["id"] = real_id
-                    changed = True
-
-        if changed:
-            node.content = content
-        return changed
+        plan_content = plan.content or {}
+        return CoursePlanResponse(
+            id=f"course-plan-{plan.id}",
+            title=node_title,
+            description=plan_content.get("summary") or node_title,
+            chapters=chapters,
+            status="ready",
+        )

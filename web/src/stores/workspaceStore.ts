@@ -228,11 +228,12 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         const id = String(node.id)
         if (node.type === 'course') {
           coursePlans[id] = {
-            ...(node.content as Partial<CoursePlan>),
-            id,
-            title: node.title,
-            chapters: Array.isArray(node.content.chapters) ? node.content.chapters as CoursePlan['chapters'] : [],
-            status: node.content.status === 'generating' || node.content.status === 'error' ? node.content.status : 'ready',
+            ...(node.course_plan ?? {
+              id,
+              title: node.title,
+              chapters: [],
+              status: 'ready' as const,
+            }),
           }
         }
         if (node.type === 'note') {
@@ -270,11 +271,12 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       const notes = { ...state.notes }
       if (node.type === 'course') {
         coursePlans[id] = {
-          ...(node.content as Partial<CoursePlan>),
-          id,
-          title: node.title,
-          chapters: Array.isArray(node.content.chapters) ? node.content.chapters as CoursePlan['chapters'] : [],
-          status: node.content.status === 'generating' || node.content.status === 'error' ? node.content.status : 'ready',
+          ...(node.course_plan ?? {
+            id,
+            title: node.title,
+            chapters: [],
+            status: 'ready' as const,
+          }),
         }
       }
       if (node.type === 'note') {
