@@ -57,6 +57,7 @@ class AgentSessionService:
         session_id: int,
         *,
         stage: str | None = None,
+        status: str | None = None,
         context: dict | None = None,
     ) -> AgentSession:
         agent_session = await self.get_by_id(session_id)
@@ -66,6 +67,9 @@ class AgentSessionService:
 
         if stage is not None:
             agent_session.stage = stage
+
+        if status is not None:
+            agent_session.status = status
 
         if context is not None:
             agent_session.context = context

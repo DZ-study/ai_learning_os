@@ -1,9 +1,10 @@
 """
 课时仓库 — 封装与课时（LearningTask）及课时内容相关的数据库操作。
 """
-from datetime import datetime, timezone
+from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
+from sqlalchemy.dialects.postgresql import insert
 
 from app.modules.agents.session.models import AgentSession
 from app.modules.goals.models import (
@@ -11,6 +12,7 @@ from app.modules.goals.models import (
     GoalPlanItem,
     Goals,
     LearningTask,
+    LessonBlockProgress,
     LessonContent,
 )
 
@@ -85,9 +87,63 @@ class LessonRepository:
         return content
 
     async def update_task_status(self, task: LearningTask, status: str) -> LearningTask:
+        now = datetime.utcnow()
         task.status = status
-        task.completed_at = (
-            datetime.now(timezone.utc) if status == "completed" else None
-        )
+        if status == "in_progress" and task.started_at is None:
+            task.started_at = now
+        task.completed_at = now if status == "completed" else None
+        task.last_accessed_at = now
         await self.session.flush()
         return task
+
+    async def start_task(self, task: LearningTask) -> LearningTask:
+        now = datetime.utcnow()
+        if task.status == "not_started":
+            task.status = "in_progress"
+            task.started_at = now
+        task.last_accessed_at = now
+        await self.session.flush()
+        return task
+
+    async def get_block_progress(
+        self, lesson_id: int, user_id: int
+    ) -> list[LessonBlockProgress]:
+        result = await self.session.execute(
+            select(LessonBlockProgress).where(
+                LessonBlockProgress.lesson_id == lesson_id,
+                LessonBlockProgress.user_id == user_id,
+            )
+        )
+        return list(result.scalars().all())
+
+    async def complete_block(
+        self, lesson_id: int, user_id: int, block_id: str
+    ) -> None:
+        now = datetime.utcnow()
+        statement = (
+            insert(LessonBlockProgress)
+            .values(
+                user_id=user_id,
+                lesson_id=lesson_id,
+                block_id=block_id,
+                status="completed",
+                started_at=now,
+                completed_at=now,
+                created_at=now,
+                updated_at=now,
+            )
+            .on_conflict_do_update(
+                constraint="uq_lesson_block_progress_user_lesson_block",
+                set_={
+                    "status": "completed",
+                    "started_at": func.coalesce(
+                        LessonBlockProgress.started_at, now
+                    ),
+                    "completed_at": func.coalesce(
+                        LessonBlockProgress.completed_at, now
+                    ),
+                    "updated_at": now,
+                },
+            )
+        )
+        await self.session.execute(statement)

@@ -28,11 +28,12 @@ export type LessonBlockData =
   | Record<string, unknown>
 
 export interface LessonBlock {
-  id?: string
+  blockId: string
   type: LessonBlockType
   title: string
   content: LessonBlockData
   order: number
+  required: boolean
 }
 
 export interface LessonContent {
@@ -45,4 +46,18 @@ export interface LessonContent {
 export interface LessonContentNotGenerated {
   status: 'not_generated'
   content: null
+}
+
+export type LessonLearningStatus = 'not_started' | 'in_progress' | 'completed'
+
+export interface LessonProgress {
+  lessonId: number
+  status: LessonLearningStatus
+  startedAt: string | null
+  completedAt: string | null
+  lastAccessedAt: string | null
+  totalRequiredBlocks: number
+  completedRequiredBlocks: number
+  progressPercent: number
+  completedBlockIds: string[]
 }

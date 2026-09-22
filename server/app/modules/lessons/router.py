@@ -4,6 +4,7 @@ from app.core.dependencies import get_current_user, get_lesson_service
 from app.modules.lessons.schemas import (
     LessonContentNotGenerated,
     LessonContentResponse,
+    LessonProgressResponse,
 )
 from app.modules.lessons.service import LessonService
 
@@ -35,3 +36,34 @@ async def generate_lesson_content(
     return await lesson_service.generate_content(
         lesson_id=lesson_id, user_id=current_user.id
     )
+
+
+@router.post("/{lesson_id}/start", response_model=LessonProgressResponse)
+async def start_lesson(
+    lesson_id: int,
+    lesson_service: LessonService = Depends(get_lesson_service),
+    current_user=Depends(get_current_user),
+):
+    return await lesson_service.start_lesson(lesson_id, current_user.id)
+
+
+@router.get("/{lesson_id}/progress", response_model=LessonProgressResponse)
+async def get_lesson_progress(
+    lesson_id: int,
+    lesson_service: LessonService = Depends(get_lesson_service),
+    current_user=Depends(get_current_user),
+):
+    return await lesson_service.get_progress(lesson_id, current_user.id)
+
+
+@router.post(
+    "/{lesson_id}/blocks/{block_id}/complete",
+    response_model=LessonProgressResponse,
+)
+async def complete_lesson_block(
+    lesson_id: int,
+    block_id: str,
+    lesson_service: LessonService = Depends(get_lesson_service),
+    current_user=Depends(get_current_user),
+):
+    return await lesson_service.complete_block(lesson_id, current_user.id, block_id)

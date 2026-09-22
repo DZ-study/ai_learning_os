@@ -30,10 +30,16 @@ async def get_session(
         # agent_type="goal_planning",
     )
     if session is None:
-        return AgentSessionHistoryResponse(session_id=0, stage="initial", context={})
+        return AgentSessionHistoryResponse(
+            session_id=0,
+            stage="initial",
+            status="pending",
+            context={},
+        )
     return AgentSessionHistoryResponse(
         session_id=session.id,
         stage=session.stage,
+        status=session.status,
         context=session.context or {},
     )
 

@@ -4,9 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database.session import get_db
 from app.core.dependencies import get_current_user
-from datetime import datetime, timezone
-
-from app.modules.goals.models import GoalPlanItem, Goals, LearningTask
+from app.modules.goals.models import Goals
 from app.modules.nodes.models import SpaceNode
 from app.modules.nodes.schemas import NodeCreate, NodePositionUpdate, NodeResponse
 from app.modules.nodes.service import SpaceNodeService
@@ -59,7 +57,6 @@ async def create_node(
     await db.refresh(node)
     return await SpaceNodeService.to_response(db, node)
 
-
 @router.patch("/{node_id}/position", response_model=NodeResponse)
 async def update_node_position(
     goal_id: int,
@@ -80,53 +77,6 @@ async def update_node_position(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="节点不存在")
 
     node.position = data.position
-    await db.commit()
-    await db.refresh(node)
-    return await SpaceNodeService.to_response(db, node)
-
-
-@router.post("/{node_id}/lessons/{lesson_id}/complete", response_model=NodeResponse)
-async def complete_node_lesson(
-    goal_id: int,
-    node_id: int,
-    lesson_id: str,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    await _get_owned_goal(goal_id, current_user, db)
-    node = await db.scalar(
-        select(SpaceNode).where(
-            SpaceNode.id == node_id,
-            SpaceNode.goal_id == goal_id,
-            SpaceNode.user_id == current_user.id,
-        )
-    )
-    if node is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="节点不存在")
-
-    if node.entity_type != "goal_plan" or node.entity_id is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="课时不存在")
-
-    try:
-        lesson_pk = int(lesson_id)
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="课时不存在") from exc
-
-    task = await db.scalar(
-        select(LearningTask).where(
-            LearningTask.id == lesson_pk,
-            LearningTask.goal_id == goal_id,
-            LearningTask.user_id == current_user.id,
-            LearningTask.plan_item_id.in_(
-                select(GoalPlanItem.id).where(GoalPlanItem.plan_id == node.entity_id)
-            ),
-        )
-    )
-    if task is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="课时不存在")
-
-    task.status = "completed"
-    task.completed_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(node)
     return await SpaceNodeService.to_response(db, node)

@@ -116,6 +116,8 @@ export default function ChatPanel() {
     sessionId: number
     plan: AgentPlan
   } | null>(null)
+  const [sessionStage, setSessionStage] = useState('initial')
+  const [sessionStatus, setSessionStatus] = useState('pending')
   const [confirmingPlan, setConfirmingPlan] = useState(false)
 
   const location = useLocation()
@@ -158,7 +160,9 @@ export default function ChatPanel() {
     setAgentSessionId(null)
     agentSessionIdRef.current = null
     setMessages([])
-    setPendingPlan(null)
+      setPendingPlan(null)
+      setSessionStage('initial')
+      setSessionStatus('pending')
 
     void getAgentSession(goal.id)
       .then(({ data }) => {
@@ -170,6 +174,14 @@ export default function ChatPanel() {
 
         setAgentSessionId(sessionId)
         agentSessionIdRef.current = sessionId
+        setSessionStage(data.stage)
+        setSessionStatus(data.status)
+        const storedPlan = data.context?.pending_plan as AgentPlan | undefined
+        setPendingPlan(
+          data.stage === 'awaiting_plan_confirmation' || data.stage === 'awaiting_confirmation'
+            ? storedPlan ? { sessionId: sessionId!, plan: storedPlan } : null
+            : null,
+        )
 
         setMessages(
           history.map((message, index) => ({
@@ -247,11 +259,15 @@ export default function ChatPanel() {
 
             agentSessionIdRef.current = sessionId
             setAgentSessionId(sessionId)
+            setSessionStage(event.data.stage ?? 'collecting_info')
+            setSessionStatus('active')
           } else if (event.event === 'plan_ready') {
             const sessionId = event.data.session_id
 
             agentSessionIdRef.current = sessionId
             setAgentSessionId(sessionId)
+            setSessionStage(event.data.stage ?? 'awaiting_plan_confirmation')
+            setSessionStatus('active')
 
             const plan = event.data.plan as AgentPlan
 
@@ -295,12 +311,28 @@ export default function ChatPanel() {
     if (!goal?.id || !pendingPlan || confirmingPlan) return
     setConfirmingPlan(true)
     try {
-      await confirmPlan(goal.id, pendingPlan.sessionId)
+      const { data: confirmation } = await confirmPlan(goal.id, pendingPlan.sessionId)
       const { data } = await getSpaceNodes(goal.id)
       loadNodes(data)
       setPendingPlan(null)
+      setSessionStage(confirmation.stage)
+      setSessionStatus(confirmation.status)
     } catch (error) {
       console.error('confirm plan failed', error)
+      // Re-read the authoritative state so a failed confirmation keeps the button.
+      try {
+        const { data } = await getAgentSession(goal.id)
+        setSessionStage(data.stage)
+        setSessionStatus(data.status)
+        const storedPlan = data.context?.pending_plan as AgentPlan | undefined
+        setPendingPlan(
+          data.stage === 'awaiting_plan_confirmation' || data.stage === 'awaiting_confirmation'
+            ? storedPlan ? { sessionId: data.session_id, plan: storedPlan } : pendingPlan
+            : null,
+        )
+      } catch (refreshError) {
+        console.error('refresh agent session failed', refreshError)
+      }
     } finally {
       setConfirmingPlan(false)
     }
@@ -427,7 +459,9 @@ export default function ChatPanel() {
             <ThreadPrimitive.ScrollToBottom />
           </ThreadPrimitive.Viewport>
 
-          {pendingPlan && (
+          {pendingPlan &&
+            (sessionStage === 'awaiting_plan_confirmation' || sessionStage === 'awaiting_confirmation') &&
+            sessionStatus !== 'completed' && sessionStatus !== 'confirmed' && (
             <div className="shrink-0 border-t border-[#ebe8e5] bg-[#fbfaf9] px-3 py-2.5">
               <div className="mb-2 text-[11px] leading-4 text-[#8176a8]">
                 {t('agent.plan_ready')}

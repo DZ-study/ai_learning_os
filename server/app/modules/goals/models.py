@@ -1,7 +1,15 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import (
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -170,21 +178,31 @@ class LearningTask(TimestampMixin, Base):
 
     status: Mapped[str] = mapped_column(
         Enum(
-            "pending",  # 未开始
+            "not_started",  # 未开始
             "in_progress",  # 进行中
             "completed",  # 完成
             name="learning_task_status",
         ),
         nullable=False,
-        default="pending",
+        default="not_started",
     )
 
+    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_accessed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True
+    )
 
     content = relationship(
         "LessonContent",
         back_populates="task",
         uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+    block_progress = relationship(
+        "LessonBlockProgress",
+        back_populates="lesson",
         cascade="all, delete-orphan",
     )
 
@@ -213,3 +231,35 @@ class LessonContent(TimestampMixin, Base):
     )
 
     task = relationship("LearningTask", back_populates="content")
+
+
+class LessonBlockProgress(TimestampMixin, Base):
+    __tablename__ = "lesson_block_progress"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "lesson_id",
+            "block_id",
+            name="uq_lesson_block_progress_user_lesson_block",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    lesson_id: Mapped[int] = mapped_column(
+        ForeignKey("learning_tasks.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    block_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(
+        Enum("in_progress", "completed", name="lesson_block_progress_status"),
+        nullable=False,
+        default="in_progress",
+    )
+    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    lesson = relationship("LearningTask", back_populates="block_progress")

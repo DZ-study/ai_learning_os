@@ -90,6 +90,7 @@ LESSON_CONTENT_SYSTEM = """你是一名专业导师。根据课程信息生成�
 - question 是开放式教学互动问题，不要求标准答案
 - quiz 是有标准答案的测验，content 使用 {"question": "...", "options": [...], "answer": "..."}
 - quiz 的 answer 必须是 options 中的一项
+- 本节至少生成 10 道 quiz 测试题；如果首轮未满足，后端会继续请求补题
 - 每个 block 必须包含 type、title、content
 - 只使用 explanation、example、code、question、quiz、summary 这六种 type
 

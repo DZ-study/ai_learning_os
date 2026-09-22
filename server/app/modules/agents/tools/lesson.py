@@ -70,10 +70,10 @@ class GenerateLessonContentTool(_LessonTool):
 
 
 class UpdateLessonStatusTool(_LessonTool):
-    """更新课时学习状态（pending / in_progress / completed）。"""
+    """更新课时学习状态（not_started / in_progress / completed）。"""
 
     name = "update_lesson_status"
-    description = "更新课时学习状态：pending / in_progress / completed"
+    description = "更新课时学习状态：not_started / in_progress / completed"
 
     async def run(self, *, lesson_id: int, user_id: int, status: str) -> ToolResult:
         try:

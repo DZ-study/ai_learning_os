@@ -93,6 +93,7 @@ class GoalAgentService:
                 await self.agent_session_service.update(
                     agent_session.id,
                     stage="collecting_info",
+                    status="active",
                     context={
                         **context,
                         "last_question": question,
@@ -273,6 +274,7 @@ class GoalAgentService:
         await self.agent_session_service.update(
             agent_session.id,
             stage="awaiting_plan_confirmation",
+            status="active",
             context={
                 **merged_context,
                 "pending_plan": plan,
@@ -398,23 +400,19 @@ class GoalAgentService:
         current_version = version_result.scalar_one()
         next_version = int(current_version) + 1
 
-        # 6. 把旧的 active 计划改成 superseded
-        active_result = await self.session.execute(
-            select(GoalPlan).where(
-                GoalPlan.goal_id == goal_id,
-                GoalPlan.user_id == user_id,
-                GoalPlan.status == "active",
-            )
-        )
-
-        active_plans = active_result.scalars().all()
-
-        for active_plan in active_plans:
-            active_plan.status = "superseded"
-
-        # 7. 在一个事务中创建 GoalPlan / GoalPlanItem / LearningTask
+        # 6. 在一个事务中完成所有变更。异常时 rollback 后 session 仍保持待确认。
         # 任一步失败都整体回滚，避免出现"计划成功但 LearningTask 未保存"。
         try:
+            active_result = await self.session.execute(
+                select(GoalPlan).where(
+                    GoalPlan.goal_id == goal_id,
+                    GoalPlan.user_id == user_id,
+                    GoalPlan.status == "active",
+                )
+            )
+            for active_plan in active_result.scalars().all():
+                active_plan.status = "superseded"
+
             # 7.1 创建 GoalPlan
             goal_plan = GoalPlan(
                 goal_id=goal_id,
@@ -451,7 +449,7 @@ class GoalAgentService:
                 await self.session.flush()
 
                 # 7.3 为 milestone.tasks 持久化 LearningTask
-                #     创建顺序：flush GoalPlanItem -> 拿到 plan_item.id -> 创建 LearningTask
+                #     先 flush GoalPlanItem，取得 plan_item.id 后再创建 LearningTask。
                 for task in milestone.tasks:
                     learning_task = LearningTask(
                         goal_id=goal_id,
@@ -460,7 +458,7 @@ class GoalAgentService:
                         title=task.title,
                         description=task.description,
                         estimated_minutes=task.estimated_minutes,
-                        status="pending",
+                        status="not_started",
                     )
                     self.session.add(learning_task)
                     await self.session.flush()
@@ -492,10 +490,30 @@ class GoalAgentService:
             }
 
             # 9. 一次性提交整个事务
+            agent_session.status = "completed"
             await self.session.commit()
         except Exception:
-            # 任意环节失败都要回滚，避免 GoalPlan / GoalPlanItem 已写入但 LearningTask 缺失
+            # 任意环节失败都整体回滚，避免计划已写入但 LearningTask 缺失。
             await self.session.rollback()
+
+            # 确认失败时，待确认计划必须仍然可恢复。显式恢复 stage/status，
+            # 避免未来在事务中新增状态修改后导致刷新页面丢失确认入口。
+            try:
+                failed_session = await self.session.get(AgentSession, session_id)
+                if failed_session is not None:
+                    failed_session.stage = "awaiting_plan_confirmation"
+                    # Keep the business stage recoverable while exposing the
+                    # failed confirmation attempt through the existing
+                    # AgentSession status enum.
+                    failed_session.status = "failed"
+                    await self.session.commit()
+            except Exception:
+                await self.session.rollback()
+                logger.exception(
+                    "failed to restore pending plan confirmation, session_id=%s",
+                    session_id,
+                )
+
             logger.exception(
                 "confirm_plan persistence failed, goal_id=%s, session_id=%s",
                 goal_id,
@@ -508,6 +526,7 @@ class GoalAgentService:
             "session_id": agent_session.id,
             "plan_id": goal_plan.id,
             "stage": agent_session.stage,
+            "status": agent_session.status,
             "version": goal_plan.version,
             "plan": plan_content,
         }

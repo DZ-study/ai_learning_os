@@ -1,6 +1,7 @@
 import { CheckCircle2 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import type { LessonLearningStatus } from '@/types/lesson'
 
 interface LearningHeaderProps {
   courseName: string
@@ -8,6 +9,8 @@ interface LearningHeaderProps {
   lessonTitle: string
   completedBlocks: number
   totalBlocks: number
+  progressPercent: number
+  status: LessonLearningStatus
 }
 
 export default function LearningHeader({
@@ -16,9 +19,10 @@ export default function LearningHeader({
   lessonTitle,
   completedBlocks,
   totalBlocks,
+  progressPercent,
+  status,
 }: LearningHeaderProps) {
-  const percent = totalBlocks > 0 ? Math.round((completedBlocks / totalBlocks) * 100) : 0
-  const finished = totalBlocks > 0 && completedBlocks === totalBlocks
+  const finished = status === 'completed'
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between gap-6 border-b bg-background px-6">
@@ -40,7 +44,7 @@ export default function LearningHeader({
                 'h-full rounded-full transition-all',
                 finished ? 'bg-green-500' : 'bg-primary',
               )}
-              style={{ width: `${percent}%` }}
+              style={{ width: `${progressPercent}%` }}
             />
           </div>
           <span className="text-xs tabular-nums text-muted-foreground">
@@ -54,7 +58,7 @@ export default function LearningHeader({
           )}
         >
           {finished && <CheckCircle2 className="size-3.5" />}
-          {finished ? '已完成' : `进行中 ${percent}%`}
+          {finished ? '已完成' : `进行中 ${progressPercent}%`}
         </span>
       </div>
     </header>

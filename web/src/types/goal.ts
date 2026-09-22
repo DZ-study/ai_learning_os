@@ -53,6 +53,7 @@ export type GoalCardProps = GoalTableProps
 export interface AgentSessionHistory {
   session_id: number
   stage: string
+  status: string
   context: {
     messages?: Array<{
       role: 'user' | 'assistant'

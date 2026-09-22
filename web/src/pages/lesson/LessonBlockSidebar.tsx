@@ -34,14 +34,14 @@ export default function LessonBlockSidebar({
         {blocks.map((block, index) => {
           const meta = BLOCK_TYPE_META[block.type]
           const TypeIcon = meta.icon
-          const completed = completedBlockIds.includes(block.id)
-          const active = block.id === currentBlockId
+          const completed = completedBlockIds.includes(block.blockId)
+          const active = block.blockId === currentBlockId
 
           return (
             <button
-              key={block.id}
+              key={block.blockId}
               type="button"
-              onClick={() => onSelectBlock(block.id)}
+              onClick={() => onSelectBlock(block.blockId)}
               className={cn(
                 'flex items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
                 active

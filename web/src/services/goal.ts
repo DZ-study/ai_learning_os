@@ -54,22 +54,13 @@ export const updateSpaceNodePosition = (
   return req.patch<SpaceNode>(`/goals/${goalId}/nodes/${nodeId}/position`, { position })
 }
 
-export const completeSpaceLesson = (
-  goalId: number,
-  nodeId: number,
-  lessonId: string,
-) => {
-  return req.post<SpaceNode>(
-    `/goals/${goalId}/nodes/${nodeId}/lessons/${encodeURIComponent(lessonId)}/complete`,
-  )
-}
-
 /* Confirm the pending plan: persists GoalPlan/GoalPlanItem/LearningTask/SpaceNode. */
 export interface ConfirmPlanResponse {
   message: string
   session_id: number
   plan_id: number
   stage: string
+  status: string
   version: number
   plan: Record<string, unknown>
 }

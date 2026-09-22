@@ -1,9 +1,9 @@
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-LessonStatus = Literal["pending", "in_progress", "completed"]
+LessonStatus = Literal["not_started", "in_progress", "completed"]
 
 LessonBlockType = Literal[
     "explanation",
@@ -26,7 +26,9 @@ class GeneratedLessonBlock(BaseModel):
 class LessonBlock(GeneratedLessonBlock):
     """Persisted lesson block with an application-assigned order."""
 
+    block_id: str = Field(min_length=1, max_length=64)
     order: int = Field(ge=1)
+    required: bool = True
 
 
 class LessonInfoResponse(BaseModel):
@@ -37,7 +39,9 @@ class LessonInfoResponse(BaseModel):
     id: int
     goal_id: int
     plan_item_id: int | None
+    started_at: datetime | None
     completed_at: datetime | None
+    last_accessed_at: datetime | None
     title: str
     description: str | None
     estimated_minutes: int
@@ -51,6 +55,26 @@ class GeneratedLessonContent(BaseModel):
 
     title: str
     blocks: list[GeneratedLessonBlock]
+
+
+class GeneratedQuizQuestion(BaseModel):
+    """A quiz item returned when the lesson needs more test questions."""
+
+    question: str
+    options: list[str] = Field(min_length=2)
+    answer: str
+
+    @field_validator("answer")
+    @classmethod
+    def answer_must_be_an_option(cls, value: str, info):
+        options = info.data.get("options", [])
+        if value not in options:
+            raise ValueError("quiz answer must be one of the options")
+        return value
+
+
+class GeneratedQuizQuestions(BaseModel):
+    questions: list[GeneratedQuizQuestion] = Field(default_factory=list)
 
 
 class LessonContentResponse(BaseModel):
@@ -69,3 +93,15 @@ class LessonContentNotGenerated(BaseModel):
 
     status: Literal["not_generated"] = "not_generated"
     content: None = None
+
+
+class LessonProgressResponse(BaseModel):
+    lesson_id: int
+    status: LessonStatus
+    started_at: datetime | None
+    completed_at: datetime | None
+    last_accessed_at: datetime | None
+    total_required_blocks: int
+    completed_required_blocks: int
+    progress_percent: int
+    completed_block_ids: list[str]

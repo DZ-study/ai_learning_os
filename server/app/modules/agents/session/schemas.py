@@ -13,4 +13,5 @@ class AgentSessionCreateData(BaseModel):
 class AgentSessionHistoryResponse(BaseModel):
     session_id: int
     stage: str
+    status: str
     context: dict
