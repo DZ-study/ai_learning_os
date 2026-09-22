@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -55,7 +55,11 @@ class GoalService:
         if not goal:
             raise NotFoundException("目标不存在")
 
-        await self.session.delete(goal)
+        # Delete the parent row directly so PostgreSQL applies the existing
+        # ON DELETE CASCADE constraints.  Using session.delete(goal) here
+        # makes SQLAlchemy null out the loaded one-to-one plan relationship
+        # before deleting the goal, but goal_plans.goal_id is NOT NULL.
+        await self.session.execute(delete(Goals).where(Goals.id == goal_id))
         try:
             await self.session.commit()
         except Exception:

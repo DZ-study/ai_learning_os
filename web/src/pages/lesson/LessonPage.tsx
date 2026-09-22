@@ -13,6 +13,7 @@ import type { LessonBlock, LessonContent, LessonProgress } from '@/types/lesson'
 import LearningHeader from './LearningHeader'
 import LessonBlockSidebar from './LessonBlockSidebar'
 import LessonContentViewer from './LessonContentViewer'
+import FloatingChat from '../learning-space/chat/FloatingChat'
 
 interface LessonRouteState {
   lesson?: {
@@ -109,7 +110,7 @@ const LessonPage = () => {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="relative flex h-screen flex-col bg-background">
       <LearningHeader
         courseName="学习课程"
         chapterName="当前章节"
@@ -138,6 +139,7 @@ const LessonPage = () => {
           onNext={() => setCurrentBlock(blocks[currentIndex + 1]?.blockId ?? null)}
         />
       </div>
+      <FloatingChat />
     </div>
   )
 }

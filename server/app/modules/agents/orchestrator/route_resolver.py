@@ -49,10 +49,14 @@ class DeterministicRouteResolver:
                 "strong planning confirmation state",
             )
 
+        # ``collecting_info`` is interruptible: the user may change intent
+        # and ask a normal learning question. Let the intent decision engine
+        # handle that case instead of pinning the whole session to planning.
+        # Only the actual plan-generation stage is non-interruptible.
         if (
             agent_type == "goal_planning"
             and status in {"pending", "active", "failed"}
-            and stage in {"collecting_info", "analyzing", "generating_plan"}
+            and stage == "generating_plan"
         ):
             return self._delegate(
                 "goal_planning",

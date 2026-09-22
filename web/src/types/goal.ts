@@ -56,6 +56,12 @@ export interface AgentSessionHistory {
   status: string
   context: {
     pending_plan?: Record<string, unknown>
+    messages?: Array<{
+      role: 'user' | 'assistant'
+      content: string
+      type?: string
+      plan?: Record<string, unknown>
+    }>
     [key: string]: unknown
   }
   messages: Array<{

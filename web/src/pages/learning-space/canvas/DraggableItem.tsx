@@ -18,6 +18,8 @@ export default function DraggableItem({ id, children, className, style }: Dragga
       : undefined,
     zIndex: isDragging ? 50 : style?.zIndex,
     cursor: isDragging ? 'grabbing' : 'grab',
+    touchAction: 'none',
+    userSelect: 'none',
   }
 
   return (

@@ -15,7 +15,7 @@ import {
   useLocalRuntime,
 } from '@assistant-ui/react'
 import { MarkdownTextPrimitive } from '@assistant-ui/react-markdown'
-import { ArrowUp, Bot, Check, Sparkles, X } from 'lucide-react'
+import { ArrowUp, Bot, Check, Maximize2, Minimize2, Sparkles } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -106,7 +106,25 @@ function formatPlan(plan: AgentPlan): string {
     .join('\n\n')
 }
 
-export default function ChatPanel() {
+interface ChatPanelProps {
+  onMinimize?: () => void
+  onMaximize?: () => void
+  onRestore?: () => void
+  isMaximized?: boolean
+  onDragStart?: (event: React.PointerEvent<HTMLElement>) => void
+  onDragMove?: (event: React.PointerEvent<HTMLElement>) => void
+  onDragEnd?: () => void
+}
+
+export default function ChatPanel({
+  onMinimize,
+  onMaximize,
+  onRestore,
+  isMaximized = false,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
+}: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [agentSessionId, setAgentSessionId] =
     useState<number | null>(null)
@@ -168,7 +186,17 @@ export default function ChatPanel() {
       .then(({ data }) => {
         if (cancelled) return
 
-        const history = data.messages ?? []
+        // 优先读取 agent_messages；兼容尚未执行迁移的旧会话，避免历史消息在
+        // ChatPanel 因路由切换重新挂载后暂时显示为空。
+        const legacyMessages = Array.isArray(data.context?.messages)
+          ? data.context.messages as Array<{
+            role: 'user' | 'assistant'
+            content: string
+            type?: string
+            plan?: AgentPlan
+          }>
+          : []
+        const history = data.messages?.length ? data.messages : legacyMessages
 
         const sessionId = data.session_id || null
 
@@ -186,8 +214,10 @@ export default function ChatPanel() {
         setMessages(
           history.map((message, index) => ({
             ...message,
-            type: message.message_type === 'plan' ? 'plan' : undefined,
-            plan: message.metadata?.plan,
+            type: ('message_type' in message
+              ? message.message_type === 'plan'
+              : message.type === 'plan') ? 'plan' : undefined,
+            plan: 'metadata' in message ? message.metadata?.plan : message.plan,
             id: `history-${goal.id}-${index}`,
           })),
         )
@@ -389,7 +419,13 @@ export default function ChatPanel() {
 
   return (
     <aside className="chat-panel flex h-full min-h-0 flex-col">
-      <header className="flex h-[66px] shrink-0 items-center justify-between border-b border-[#ebe8e5] px-4">
+      <header
+        className="flex h-[66px] shrink-0 touch-none cursor-grab select-none items-center justify-between border-b border-[#ebe8e5] px-4 active:cursor-grabbing"
+        onPointerDown={onDragStart}
+        onPointerMove={onDragMove}
+        onPointerUp={onDragEnd}
+        onPointerCancel={onDragEnd}
+      >
         <div className="flex items-center gap-2.5">
           <div className="flex size-7 items-center justify-center rounded-lg bg-[#eef0ff] text-[#6d62c1]">
             <Bot className="size-4" />
@@ -407,14 +443,26 @@ export default function ChatPanel() {
           </div>
         </div>
 
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          aria-label={t('chat.close')}
-          title={t('chat.close')}
-        >
-          <X className="size-3.5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={isMaximized ? t('chat.restore') : t('chat.maximize')}
+            title={isMaximized ? t('chat.restore') : t('chat.maximize')}
+            onClick={isMaximized ? onRestore : onMaximize}
+          >
+            {isMaximized ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={t('chat.minimize')}
+            title={t('chat.minimize')}
+            onClick={onMinimize}
+          >
+            <Minimize2 className="size-3.5" />
+          </Button>
+        </div>
       </header>
 
       <AssistantRuntimeProvider
