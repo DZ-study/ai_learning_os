@@ -18,8 +18,6 @@ from .decision_engine import LLMDecisionEngine
 from .dispatcher import AgentDispatcher
 from .policy import OrchestratorPolicy
 
-FALLBACK_TARGET_AGENT = "goal_planning"
-
 logger = logging.getLogger(__name__)
 
 
@@ -46,9 +44,12 @@ class Orchestrator:
         worker_result: AgentResult | None = None,
     ) -> AgentResult:
         decision = await self.decision_engine.decide(context, worker_result)
-        logging.info(decision)
-        if decision.action == OrchestratorAction.DELEGATE:
-            decision = self._fallback_unregistered(decision, context)
+        logger.info(
+            "orchestrator decision action=%s target_agent=%s reason=%s",
+            decision.action,
+            decision.target_agent,
+            decision.reason,
+        )
         self.policy.validate(decision)
 
         if decision.action == OrchestratorAction.DELEGATE:
@@ -107,9 +108,13 @@ class Orchestrator:
         return await self._dispatch_to_worker(decision, context)
 
     @staticmethod
-    def _to_planning_context(
+    def _to_worker_context(
         context: GlobalAgentContext,
-    ) -> PlanningWorkerContext:
+        target_agent: str,
+    ) -> GlobalAgentContext | PlanningWorkerContext:
+        if target_agent != "goal_planning":
+            return context
+
         return PlanningWorkerContext(
             user_id=context.user_id,
             goal_id=context.goal_id or "",
@@ -122,28 +127,11 @@ class Orchestrator:
         decision: OrchestratorDecision,
         context: GlobalAgentContext,
     ) -> AgentResult:
-        worker_context = self._to_planning_context(context)
+        if not decision.target_agent:
+            raise ValueError("DELEGATE requires target_agent")
+
+        worker_context = self._to_worker_context(context, decision.target_agent)
         return await self.dispatcher.dispatch(decision, worker_context)
-
-    def _fallback_unregistered(
-        self,
-        decision: OrchestratorDecision,
-        context: GlobalAgentContext,
-    ) -> OrchestratorDecision:
-        """Decision Engine 选出的 Worker 未注册时降级到默认 Worker。
-
-        原始 target_agent 保留在 context.metadata 中，供后续轮次追溯。
-        """
-
-        target_agent = decision.target_agent
-        if not target_agent or self.dispatcher.registry.has(target_agent):
-            return decision
-
-        context.metadata["original_target_agent"] = target_agent
-        context.metadata["fallback_reason"] = f"Worker not registered: {target_agent}"
-        return decision.model_copy(
-            update={"target_agent": FALLBACK_TARGET_AGENT},
-        )
 
     # 构建全局上下文
     async def _build_context(
@@ -237,6 +225,5 @@ class Orchestrator:
             reason=decision.reason,
             parameters=decision.parameters,
         )
-        delegate = self._fallback_unregistered(delegate, context)
         self.policy.validate(delegate)
         return await self._dispatch_to_worker(delegate, context)

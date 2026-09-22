@@ -6,6 +6,8 @@ from app.infrastructure.ai.prompts.prompt import (
     LESSON_CONTENT_USER,
 )
 from app.infrastructure.ai.service import LLMService
+from app.modules.agents.contracts.context import GlobalAgentContext
+from app.modules.agents.contracts.result import AgentResult, AgentResultStatus
 from app.modules.lessons.schemas import (
     GeneratedLessonContent,
     GeneratedQuizQuestions,
@@ -22,6 +24,57 @@ class TutorWorker:
 
     def __init__(self, llm: LLMService) -> None:
         self.llm = llm
+
+    async def execute(self, context: GlobalAgentContext) -> AgentResult:
+        """Answer a knowledge question without entering goal planning."""
+        try:
+            response = await self.llm.chat(
+                self._build_question(context),
+                system_prompt=(
+                    "你是一名专业学习导师。请直接回答用户当前的学习问题，"
+                    "用清晰、准确、适合初学者理解的方式解释。"
+                    "不要生成学习计划，不要询问用户创建 Goal，"
+                    "不要输出 JSON 或 Markdown 代码块之外的控制信息。"
+                ),
+            )
+        except Exception as exc:
+            logger.exception("tutor question failed, session_id=%s", context.session_id)
+            return AgentResult(
+                status=AgentResultStatus.FAILED,
+                error_code="TUTOR_FAILED",
+                error_message="导师回答失败，请稍后重试",
+                message=str(exc),
+            )
+
+        return AgentResult(
+            status=AgentResultStatus.COMPLETED,
+            message=response.content,
+            output={
+                "response_type": "tutor_answer",
+                "stage": "tutoring",
+                "session_id": self._session_id(context.session_id),
+                "answer": response.content,
+            },
+        )
+
+    @staticmethod
+    def _build_question(context: GlobalAgentContext) -> str:
+        goal = context.environment.get("goal") or {}
+        return json.dumps(
+            {
+                "question": context.user_input or "",
+                "goal": goal,
+                "recent_conversation": context.conversation[-8:],
+            },
+            ensure_ascii=False,
+        )
+
+    @staticmethod
+    def _session_id(value: str) -> int | None:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
 
     async def generate(self, context: TutorLessonContext) -> GeneratedLessonContent:
         user_prompt = LESSON_CONTENT_USER.replace(

@@ -1,6 +1,7 @@
 from app.modules.agents.contracts.worker import AgentWorker
 from app.modules.agents.service import GoalAgentService
 from app.modules.agents.workflow.goal_planning.worker import GoalPlanningWorker
+from app.modules.agents.workflow.tutor.worker import TutorWorker
 
 
 class AgentRegistry:
@@ -48,4 +49,5 @@ def build_agent_registry(goal_agent: GoalAgentService) -> AgentRegistry:
 
     registry = AgentRegistry()
     registry.register("goal_planning", GoalPlanningWorker(goal_agent))
+    registry.register("tutor", TutorWorker(goal_agent.llm))
     return registry

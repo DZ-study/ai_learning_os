@@ -1,8 +1,12 @@
-from ..contracts.context import PlanningWorkerContext
+import logging
+
+from ..contracts.context import GlobalAgentContext, PlanningWorkerContext
 from ..contracts.result import AgentResult
 from ..registry.agent_registry import AgentRegistry
 from .actions import OrchestratorAction
 from .decision import OrchestratorDecision
+
+logger = logging.getLogger(__name__)
 
 
 class AgentDispatcher:
@@ -15,7 +19,7 @@ class AgentDispatcher:
     async def dispatch(
         self,
         decision: OrchestratorDecision,
-        context: PlanningWorkerContext,
+        context: GlobalAgentContext | PlanningWorkerContext,
     ) -> AgentResult:
 
         if decision.action != OrchestratorAction.DELEGATE:
@@ -25,5 +29,11 @@ class AgentDispatcher:
             raise ValueError("DELEGATE requires target_agent")
 
         worker = self.registry.get(decision.target_agent)
+
+        logger.info(
+            "dispatching worker target_agent=%s worker=%s",
+            decision.target_agent,
+            worker.__class__.__name__,
+        )
 
         return await worker.execute(context)

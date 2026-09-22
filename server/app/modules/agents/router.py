@@ -101,6 +101,28 @@ async def _orchestrated_stream(
         yield GoalAgentService._event("done", data)
         return
 
+    if (
+        result.status == AgentResultStatus.COMPLETED
+        and result.output.get("response_type") == "tutor_answer"
+    ):
+        yield GoalAgentService._event(
+            "status",
+            {
+                "stage": result.output.get("stage", "tutoring"),
+                "message": "导师正在回答...",
+            },
+        )
+        if result.message:
+            yield GoalAgentService._event("delta", {"content": result.message})
+        yield GoalAgentService._event(
+            "done",
+            {
+                "stage": result.output.get("stage", "tutoring"),
+                "session_id": result.output.get("session_id"),
+            },
+        )
+        return
+
     if result.status == AgentResultStatus.COMPLETED:
         yield GoalAgentService._event("plan_ready", result.output)
         return
