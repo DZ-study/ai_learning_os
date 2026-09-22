@@ -168,7 +168,7 @@ export default function ChatPanel() {
       .then(({ data }) => {
         if (cancelled) return
 
-        const history = data.context?.messages ?? []
+        const history = data.messages ?? []
 
         const sessionId = data.session_id || null
 
@@ -186,6 +186,8 @@ export default function ChatPanel() {
         setMessages(
           history.map((message, index) => ({
             ...message,
+            type: message.message_type === 'plan' ? 'plan' : undefined,
+            plan: message.metadata?.plan,
             id: `history-${goal.id}-${index}`,
           })),
         )

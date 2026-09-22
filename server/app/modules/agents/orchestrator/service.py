@@ -2,7 +2,6 @@ import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.logging import configure_logging
 from app.modules.agents.contracts.context import (
     GlobalAgentContext,
     PlanningWorkerContext,
@@ -17,6 +16,7 @@ from .decision import OrchestratorDecision
 from .decision_engine import LLMDecisionEngine
 from .dispatcher import AgentDispatcher
 from .policy import OrchestratorPolicy
+from .route_resolver import DeterministicRouteResolver
 
 logger = logging.getLogger(__name__)
 
@@ -31,24 +31,36 @@ class Orchestrator:
         policy: OrchestratorPolicy,
         db: AsyncSession | None = None,
         agent_session_service: AgentSessionService | None = None,
+        route_resolver: DeterministicRouteResolver | None = None,
     ) -> None:
         self.decision_engine = decision_engine
         self.dispatcher = dispatcher
         self.policy = policy
         self.db = db
         self.agent_session_service = agent_session_service
+        self.route_resolver = route_resolver or DeterministicRouteResolver()
 
     async def execute(
         self,
         context: GlobalAgentContext,
         worker_result: AgentResult | None = None,
     ) -> AgentResult:
-        decision = await self.decision_engine.decide(context, worker_result)
+        deterministic_route = self.route_resolver.resolve(context)
+        if deterministic_route is not None:
+            route_source = "deterministic"
+            decision = deterministic_route.decision
+            route_reason = deterministic_route.reason
+        else:
+            route_source = "llm"
+            decision = await self.decision_engine.decide(context, worker_result)
+            route_reason = decision.reason or "deterministic route unresolved"
+
         logger.info(
-            "orchestrator decision action=%s target_agent=%s reason=%s",
+            "route_source=%s action=%s target_agent=%s reason=%s",
+            route_source,
             decision.action,
             decision.target_agent,
-            decision.reason,
+            route_reason,
         )
         self.policy.validate(decision)
 
@@ -151,14 +163,40 @@ class Orchestrator:
         if goal is None or goal.user_id != user_id:
             return self._failed("GOAL_ACCESS_DENIED", "目标不存在或无权访问")
 
+        session_id = request.session_id
+        agent_type = "goal_planning"
+
+        if session_id is not None:
+            requested_session = await self.agent_session_service.get_by_id(session_id)
+            if requested_session is None:
+                return self._failed("SESSION_NOT_FOUND", "Agent 会话不存在")
+            if (
+                requested_session.user_id != user_id
+                or requested_session.goal_id != goal_id
+            ):
+                return self._failed(
+                    "SESSION_ACCESS_DENIED", "Agent 会话不存在或无权访问"
+                )
+            agent_type = requested_session.agent_type
+        else:
+            resumable = (
+                await self.agent_session_service.repository.get_resumable_session(
+                    user_id=user_id,
+                    goal_id=goal_id,
+                )
+            )
+            if resumable is not None:
+                session_id = resumable.id
+                agent_type = resumable.agent_type
+
         try:
             agent_session = await self.agent_session_service.create_or_resume(
-                session_id=request.session_id,
+                session_id=session_id,
                 data=AgentSessionCreateData(
                     goal_id=goal_id,
                     user_id=user_id,
-                    agent_type="goal_planning",
-                    context={"messages": []},
+                    agent_type=agent_type,
+                    context={},
                 ),
             )
         except ValueError:
@@ -168,7 +206,13 @@ class Orchestrator:
             return self._failed("SESSION_NOT_FOUND", "Agent 会话不存在")
 
         session_context = dict(agent_session.context or {})
-        messages = list(session_context.get("messages", []))
+        stored_messages = await self.agent_session_service.repository.list_messages(
+            agent_session.id, limit=100
+        )
+        messages = [
+            {"role": message.role, "content": message.content}
+            for message in stored_messages
+        ]
 
         return GlobalAgentContext(
             user_id=str(user_id),
@@ -177,9 +221,7 @@ class Orchestrator:
             user_input=request.message,
             conversation=messages,
             working_memory={
-                key: value
-                for key, value in session_context.items()
-                if key != "messages"
+                key: value for key, value in session_context.items()
             },
             environment={
                 "goal": {

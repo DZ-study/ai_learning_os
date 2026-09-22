@@ -49,5 +49,8 @@ def build_agent_registry(goal_agent: GoalAgentService) -> AgentRegistry:
 
     registry = AgentRegistry()
     registry.register("goal_planning", GoalPlanningWorker(goal_agent))
-    registry.register("tutor", TutorWorker(goal_agent.llm))
+    registry.register(
+        "tutor",
+        TutorWorker(goal_agent.llm, goal_agent.agent_session_service.repository),
+    )
     return registry

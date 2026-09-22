@@ -22,11 +22,25 @@ logger = logging.getLogger(__name__)
 class TutorWorker:
     """Generate one Lesson's structured content without touching persistence."""
 
-    def __init__(self, llm: LLMService) -> None:
+    def __init__(self, llm: LLMService, session_repository=None) -> None:
         self.llm = llm
+        self.session_repository = session_repository
 
     async def execute(self, context: GlobalAgentContext) -> AgentResult:
         """Answer a knowledge question without entering goal planning."""
+        session_id = self._session_id(context.session_id)
+        execution_token = None
+        if self.session_repository is not None and session_id is not None:
+            execution_token = await self.session_repository.claim_execution(session_id)
+            if execution_token is None:
+                return AgentResult(
+                    status=AgentResultStatus.FAILED,
+                    error_code="SESSION_BUSY",
+                    error_message="当前会话正在处理中，请稍后重试",
+                )
+            await self.session_repository.append_message(
+                session_id, role="user", content=context.user_input or ""
+            )
         try:
             response = await self.llm.chat(
                 self._build_question(context),
@@ -39,11 +53,30 @@ class TutorWorker:
             )
         except Exception as exc:
             logger.exception("tutor question failed, session_id=%s", context.session_id)
+            if execution_token is not None:
+                await self.session_repository.finish_execution(
+                    session_id, execution_token
+                )
             return AgentResult(
                 status=AgentResultStatus.FAILED,
                 error_code="TUTOR_FAILED",
                 error_message="导师回答失败，请稍后重试",
                 message=str(exc),
+            )
+
+        if execution_token is not None:
+            assistant_message = await self.session_repository.append_message(
+                session_id,
+                role="assistant",
+                content=response.content,
+                message_type="answer",
+            )
+            await self.session_repository.finish_execution(
+                session_id,
+                execution_token,
+                stage="tutoring",
+                status="active",
+                last_message_id=assistant_message.id,
             )
 
         return AgentResult(
@@ -99,7 +132,7 @@ class TutorWorker:
     async def generate_quiz_questions(
         self, context: TutorLessonContext, count: int
     ) -> GeneratedQuizQuestions:
-        """Ask the model only for missing quiz items; persistence stays in LessonService."""
+        """Ask the model for missing quiz items; persistence stays in LessonService."""
         user_prompt = (
             "请根据以下 Lesson 上下文补充测试题。只生成 exactly "
             f"{count} 道互不重复的选择题，返回 questions 数组；每道题包含 question、"

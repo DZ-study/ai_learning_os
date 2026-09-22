@@ -55,13 +55,16 @@ export interface AgentSessionHistory {
   stage: string
   status: string
   context: {
-    messages?: Array<{
-      role: 'user' | 'assistant'
-      content: string
-      type?: 'plan'
-      plan?: Record<string, unknown>
-    }>
     pending_plan?: Record<string, unknown>
     [key: string]: unknown
   }
+  messages: Array<{
+    id: number
+    sequence: number
+    role: 'user' | 'assistant'
+    content: string
+    message_type: string
+    metadata?: Record<string, unknown>
+  }>
+  messages_total: number
 }

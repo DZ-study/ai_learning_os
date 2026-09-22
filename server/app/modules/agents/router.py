@@ -1,6 +1,6 @@
 from collections.abc import AsyncIterator
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 
 from app.core.dependencies import (
@@ -12,7 +12,10 @@ from app.modules.agents.contracts.result import AgentResult, AgentResultStatus
 from app.modules.agents.orchestrator.service import Orchestrator
 from app.modules.agents.schemas import AgentConfirmRequest, AgentReplyRequest
 from app.modules.agents.service import GoalAgentService
-from app.modules.agents.session.schemas import AgentSessionHistoryResponse
+from app.modules.agents.session.schemas import (
+    AgentMessageResponse,
+    AgentSessionHistoryResponse,
+)
 from app.modules.user.models import User
 
 router = APIRouter(prefix="/goals/{goal_id}/agent", tags=["Goal Agent"])
@@ -21,13 +24,16 @@ router = APIRouter(prefix="/goals/{goal_id}/agent", tags=["Goal Agent"])
 @router.get("/session", response_model=AgentSessionHistoryResponse)
 async def get_session(
     goal_id: int,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
     current_user: User = Depends(get_current_user),
     service: GoalAgentService = Depends(get_goal_agent_service),
 ):
     session = await service.agent_session_service.repository.get_resumable_session(
         user_id=current_user.id,
         goal_id=goal_id,
-        # agent_type="goal_planning",
+        agent_type="goal_planning",
+        include_completed=True,
     )
     if session is None:
         return AgentSessionHistoryResponse(
@@ -35,12 +41,33 @@ async def get_session(
             stage="initial",
             status="pending",
             context={},
+            messages=[],
+            messages_total=0,
         )
+    messages = await service.agent_session_service.repository.list_messages(
+        session.id, limit=limit, offset=offset
+    )
+    total = await service.agent_session_service.repository.count_messages(session.id)
     return AgentSessionHistoryResponse(
         session_id=session.id,
         stage=session.stage,
         status=session.status,
         context=session.context or {},
+        messages=[
+            AgentMessageResponse(
+                id=item.id,
+                session_id=item.session_id,
+                sequence=item.sequence,
+                role=item.role,
+                content=item.content,
+                message_type=item.message_type,
+                metadata=item.message_metadata or {},
+                token_count=item.token_count,
+                created_at=item.created_at,
+            )
+            for item in messages
+        ],
+        messages_total=total,
     )
 
 

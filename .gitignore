@@ -65,9 +65,12 @@ Desktop.ini
 docker-compose.override.yml
 
 tests
+!server/tests/
+!server/tests/**
 
 UI
 
 .pnpm-store
 
 study_demo
+server/tests/**

@@ -67,7 +67,7 @@ class GoalAgentService:
                     goal_id=goal_id,
                     user_id=user_id,
                     agent_type="goal_planning",
-                    context={"messages": []},
+                    context={},
                 ),
             )
         except ValueError:
@@ -80,28 +80,41 @@ class GoalAgentService:
             yield self._error("Agent 会话不存在", code="SESSION_NOT_FOUND")
             return
 
-        await self.session.commit()  # 结束数据库操作，开始llm流式交互
+        execution_token = await self.agent_session_service.repository.claim_execution(
+            agent_session.id
+        )
+        if execution_token is None:
+            yield self._error("当前会话正在处理中，请稍后重试", code="SESSION_BUSY")
+            return
 
-        # 读取历史上下文
         context = dict(agent_session.context or {})
-        messages = list(context.get("messages", []))
 
         # 首次请求只建立会话并返回首个问题，不应触发一次空回答的图执行。
         if not request.message.strip():
             question = context.get("last_question") or self._question("current_level")
             if not context.get("last_question"):
+                await self.agent_session_service.repository.append_message(
+                    agent_session.id,
+                    role="assistant",
+                    content=question,
+                    message_type="question",
+                )
                 await self.agent_session_service.update(
                     agent_session.id,
                     stage="collecting_info",
                     status="active",
-                    context={
-                        **context,
-                        "last_question": question,
-                        "messages": [
-                            *messages,
-                            {"role": "assistant", "content": question},
-                        ],
-                    },
+                    context={**context, "last_question": question},
+                )
+                await self.agent_session_service.repository.finish_execution(
+                    agent_session.id, execution_token,
+                    stage="collecting_info",
+                    status="active",
+                    context={**context, "last_question": question},
+                )
+            else:
+                await self.agent_session_service.repository.finish_execution(
+                    agent_session.id, execution_token,
+                    stage="collecting_info", status="active", context=context
                 )
 
             yield self._event(
@@ -120,14 +133,11 @@ class GoalAgentService:
             return
 
         # 保存本轮用户消息
-        messages.append(
-            {
-                "role": "user",
-                "content": request.message,
-            }
+        await self.agent_session_service.repository.append_message(
+            agent_session.id, role="user", content=request.message
         )
-
-        context["messages"] = messages
+        # 将用户输入先提交为不可变历史；后续 LLM/计划事务失败不能回滚掉用户消息。
+        await self.session.commit()
         # context = self._merge_answer(context, request.message)
 
         yield self._event(
@@ -167,6 +177,9 @@ class GoalAgentService:
             yield self._error(
                 "生成学习计划失败，请稍后重试", code="PLAN_GENERATION_FAILED"
             )
+            await self.agent_session_service.repository.finish_execution(
+                agent_session.id, execution_token
+            )
             return
 
         merged_context = graph_result.get("merged_context", context)
@@ -182,6 +195,7 @@ class GoalAgentService:
                 agent_session,
                 merged_context,
                 graph_result.get("question"),
+                execution_token,
             ):
                 yield event
 
@@ -192,11 +206,15 @@ class GoalAgentService:
                 agent_session,
                 merged_context,
                 plan,
+                execution_token,
             ):
                 yield event
 
             return
 
+        await self.agent_session_service.repository.finish_execution(
+            agent_session.id, execution_token, context=merged_context
+        )
         yield self._error("未知的执行结果", code="UNKNOWN_AGENT_RESULT")
 
     async def _handle_missing_info(
@@ -204,31 +222,29 @@ class GoalAgentService:
         agent_session,
         merged_context: dict,
         question: str | None,
+        execution_token: str,
     ) -> AsyncIterator[str]:
 
         if not question:
+            await self.agent_session_service.repository.finish_execution(
+                agent_session.id, execution_token
+            )
             yield self._error(
                 "生成追问失败，请稍后重试", code="QUESTION_GENERATION_FAILED"
             )
             return
 
-        messages = list(merged_context.get("messages", []))
-
-        messages.append(
-            {
-                "role": "assistant",
-                "content": question,
-            }
-        )
-
-        await self.agent_session_service.update(
+        message = await self.agent_session_service.repository.append_message(
             agent_session.id,
+            role="assistant", content=question, message_type="question"
+        )
+        await self.agent_session_service.repository.finish_execution(
+            agent_session.id,
+            execution_token,
             stage="collecting_info",
-            context={
-                **merged_context,
-                "last_question": question,
-                "messages": messages,
-            },
+            status="active",
+            context={**merged_context, "last_question": question},
+            last_message_id=message.id,
         )
 
         yield self._event(
@@ -252,34 +268,23 @@ class GoalAgentService:
         agent_session,
         merged_context: dict,
         plan: dict | None,
+        execution_token: str,
     ) -> AsyncIterator[str]:
 
         if not plan:
             yield self._error("计划结果为空，请稍后重试", code="EMPTY_PLAN")
             return
 
-        messages = list(merged_context.get("messages", []))
-
         plan_text = self._format_plan_message(plan) or "学习计划已生成，等待你的确认。"
-
-        messages.append(
-            {
-                "role": "assistant",
-                "type": "plan",
-                "content": plan_text,
-                "plan": plan,
-            }
-        )
-
-        await self.agent_session_service.update(
+        message = await self.agent_session_service.repository.append_message(
             agent_session.id,
-            stage="awaiting_plan_confirmation",
-            status="active",
-            context={
-                **merged_context,
-                "pending_plan": plan,
-                "messages": messages,
-            },
+            role="assistant", content=plan_text, message_type="plan",
+            message_metadata={"plan": plan}
+        )
+        await self.agent_session_service.repository.finish_execution(
+            agent_session.id, execution_token,
+            stage="awaiting_plan_confirmation", status="active",
+            context={**merged_context, "pending_plan": plan}, last_message_id=message.id
         )
 
         yield self._event(
@@ -383,6 +388,12 @@ class GoalAgentService:
 
         plan_content = study_plan.model_dump()
 
+        execution_token = await self.agent_session_service.repository.claim_execution(
+            session_id
+        )
+        if execution_token is None:
+            raise BadRequestException("当前会话正在处理中，请稍后重试")
+
         # 5. 计算新版本号
 
         version_result = await self.session.execute(
@@ -483,6 +494,8 @@ class GoalAgentService:
 
             # 8. 更新 AgentSession
             agent_session.stage = "assigned_today"
+            agent_session.execution_token = None
+            agent_session.execution_expires_at = None
             agent_session.context = {
                 key: value
                 for key, value in (agent_session.context or {}).items()
@@ -506,6 +519,8 @@ class GoalAgentService:
                     # failed confirmation attempt through the existing
                     # AgentSession status enum.
                     failed_session.status = "failed"
+                    failed_session.execution_token = None
+                    failed_session.execution_expires_at = None
                     await self.session.commit()
             except Exception:
                 await self.session.rollback()

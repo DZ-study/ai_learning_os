@@ -6,7 +6,7 @@ from datetime import datetime
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 
-from app.modules.agents.session.models import AgentSession
+from app.modules.agents.session.models import AgentMessage, AgentSession
 from app.modules.goals.models import (
     GoalPlan,
     GoalPlanItem,
@@ -67,7 +67,16 @@ class LessonRepository:
         if session is None:
             return {}
         context = dict(session.context or {})
-        messages = context.get("messages") or []
+        message_result = await self.session.execute(
+            select(AgentMessage)
+            .where(AgentMessage.session_id == session.id)
+            .order_by(AgentMessage.sequence.desc())
+            .limit(limit)
+        )
+        messages = [
+            {"role": item.role, "content": item.content}
+            for item in reversed(message_result.scalars().all())
+        ]
         return {
             "recent_messages": messages[-limit:],
             "current_level": context.get("current_level"),
