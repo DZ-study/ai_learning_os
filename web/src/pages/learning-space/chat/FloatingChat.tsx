@@ -6,12 +6,18 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import ChatPanel from './ChatPanel'
 
-export default function FloatingChat() {
+interface FloatingChatProps {
+  docked?: boolean
+  onMinimize?: () => void
+}
+
+export default function FloatingChat({ docked = false, onMinimize }: FloatingChatProps) {
   const isOpen = useChatStore((state) => state.isOpen)
   const mode = useChatStore((state) => state.mode)
   const setOpen = useChatStore((state) => state.setOpen)
   const setMode = useChatStore((state) => state.setMode)
   const { t } = useTranslation()
+  const isDocked = docked && mode === 'popup'
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null)
   const dragRef = useRef<{ offsetX: number; offsetY: number } | null>(null)
 
@@ -64,13 +70,13 @@ export default function FloatingChat() {
       onPointerUp={handleDragEnd}
       onPointerCancel={handleDragEnd}
     >
-      <div
+      {!isDocked && <div
         className="floating-chat-window"
         aria-hidden={!isOpen}
         inert={!isOpen ? true : undefined}
       >
         <ChatPanel
-          onMinimize={() => setOpen(false)}
+          onMinimize={onMinimize ?? (() => setOpen(false))}
           onMaximize={() => setMode('drawer')}
           onRestore={() => setMode('popup')}
           isMaximized={mode === 'drawer'}
@@ -78,7 +84,7 @@ export default function FloatingChat() {
           onDragMove={handleDragMove}
           onDragEnd={handleDragEnd}
         />
-      </div>
+      </div>}
 
       <Button
         type="button"

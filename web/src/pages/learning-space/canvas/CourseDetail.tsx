@@ -1,4 +1,4 @@
-import { ArrowLeft, BookOpen, CheckCircle2, Circle, Clock3, Timer } from 'lucide-react'
+import { ArrowLeft, BookOpen, Check, Clock3, Timer } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -19,11 +19,54 @@ interface CourseDetailProps {
   onStartLesson: (lesson: Lesson) => void
 }
 
+function LessonProgressRing({ progress }: { progress: number }) {
+  const normalizedProgress = Math.min(100, Math.max(0, progress))
+  const radius = 6
+  const circumference = 2 * Math.PI * radius
+  const dashOffset = circumference * (1 - normalizedProgress / 100)
+
+  return (
+    <span
+      className="relative flex size-4 shrink-0 items-center justify-center"
+      aria-label={`学习进度 ${normalizedProgress}%`}
+    >
+      <svg viewBox="0 0 16 16" className="size-4 -rotate-90" aria-hidden="true">
+        <circle
+          cx="8"
+          cy="8"
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className="text-[#d8d5d8]"
+        />
+        {normalizedProgress > 0 && (
+          <circle
+            cx="8"
+            cy="8"
+            r={radius}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={dashOffset}
+            className="text-[#6bb590]"
+          />
+        )}
+      </svg>
+      {normalizedProgress === 100 && (
+        <Check className="absolute size-2.5 text-[#6bb590]" strokeWidth={3} />
+      )}
+    </span>
+  )
+}
+
 export default function CourseDetail({ course, onBack, onStartLesson }: CourseDetailProps) {
   const { t } = useTranslation()
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
   const completedLessons = course.chapters.reduce(
-    (count, chapter) => count + chapter.lessons.filter((lesson) => lesson.status === 'completed').length,
+    (count, chapter) => count + chapter.lessons.filter((lesson) => lesson.progress === 100).length,
     0,
   )
   const lessonCount = course.chapters.reduce((count, chapter) => count + chapter.lessons.length, 0)
@@ -70,7 +113,7 @@ export default function CourseDetail({ course, onBack, onStartLesson }: CourseDe
                     {chapter.lessons.map((lesson) => (
                       <div key={lesson.id} className="flex py-2 items-center justify-between gap-2 text-sm text-[#77747a]">
                         <div className="flex items-center gap-2 transition-colors hover:text-[#6655b3]">
-                          {lesson.status === 'completed' ? <CheckCircle2 className="size-4 text-[#6bb590]" /> : <Circle className="size-4 text-[#b8b3bb]" />}
+                          <LessonProgressRing progress={lesson.progress} />
                           <button
                             type="button"
                             className="truncate text-left hover:text-[#6655b3] cursor-pointer"

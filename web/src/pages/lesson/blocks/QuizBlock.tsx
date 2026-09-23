@@ -7,16 +7,25 @@ import type { QuizBlockData } from '@/types/lesson'
 
 interface QuizBlockProps {
   data: QuizBlockData
+  completed?: boolean
   onCorrect: () => void
 }
 
-export default function QuizBlock({ data, onCorrect }: QuizBlockProps) {
-  const [selected, setSelected] = useState<string | null>(null)
+type AnswerState = 'unanswered' | 'correct' | 'incorrect'
+
+export default function QuizBlock({ data, completed = false, onCorrect }: QuizBlockProps) {
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
+  const [answerState, setAnswerState] = useState<AnswerState>(
+    completed ? 'correct' : 'unanswered',
+  )
 
   const handleSelect = (option: string) => {
-    setSelected(option)
+    setSelectedAnswer(option)
     if (option === data.answer) {
+      setAnswerState('correct')
       onCorrect()
+    } else {
+      setAnswerState('incorrect')
     }
   }
 
@@ -26,9 +35,9 @@ export default function QuizBlock({ data, onCorrect }: QuizBlockProps) {
 
       <div className="space-y-2">
         {data.options.map((option) => {
-          const isSelected = selected === option
+          const isSelected = selectedAnswer === option
           const isAnswer = option === data.answer
-          const answeredCorrectly = selected === data.answer
+          const answeredCorrectly = answerState === 'correct'
 
           return (
             <button
@@ -56,16 +65,23 @@ export default function QuizBlock({ data, onCorrect }: QuizBlockProps) {
         })}
       </div>
 
-      {selected && selected !== data.answer && (
+      {answerState === 'incorrect' && (
         <div className="flex items-center gap-3">
           <p className="text-sm text-destructive">回答不正确，再试一次。</p>
-          <Button variant="outline" size="sm" onClick={() => setSelected(null)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setSelectedAnswer(null)
+              setAnswerState('unanswered')
+            }}
+          >
             重新作答
           </Button>
         </div>
       )}
 
-      {selected === data.answer && (
+      {answerState === 'correct' && (
         <p className="text-sm font-medium text-green-600">回答正确，本块已完成。</p>
       )}
     </div>

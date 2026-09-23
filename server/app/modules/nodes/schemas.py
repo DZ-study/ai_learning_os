@@ -29,6 +29,7 @@ class CourseLessonResponse(BaseModel):
         default=None, serialization_alias="estimatedMinutes"
     )
     status: CourseLessonStatus
+    progress: int = Field(ge=0, le=100)
 
 
 class CourseChapterResponse(BaseModel):

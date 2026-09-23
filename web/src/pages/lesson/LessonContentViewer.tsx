@@ -25,7 +25,7 @@ export default function LessonContentViewer({
   onNext,
 }: LessonContentViewerProps) {
   return (
-    <section className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+    <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
       <div className="mx-auto w-full max-w-3xl flex-1 px-8 py-8">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-xl font-semibold">{block.title}</h2>
@@ -37,7 +37,11 @@ export default function LessonContentViewer({
           )}
         </div>
 
-        <LessonBlockRenderer block={block} onComplete={onComplete} />
+        <LessonBlockRenderer
+          block={block}
+          completed={completed}
+          onComplete={onComplete}
+        />
 
         {!completed && block.type !== 'quiz' && (
           <div className="mt-8">

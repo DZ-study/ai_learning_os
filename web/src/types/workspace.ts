@@ -43,6 +43,7 @@ export interface Lesson {
   title: string
   estimatedMinutes?: number
   status?: LessonStatus
+  progress: number
 }
 
 export interface Chapter {

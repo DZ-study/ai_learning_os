@@ -13,7 +13,7 @@ import type { LessonBlock, LessonContent, LessonProgress } from '@/types/lesson'
 import LearningHeader from './LearningHeader'
 import LessonBlockSidebar from './LessonBlockSidebar'
 import LessonContentViewer from './LessonContentViewer'
-import FloatingChat from '../learning-space/chat/FloatingChat'
+import LessonTutor from './LessonTutor'
 
 interface LessonRouteState {
   lesson?: {
@@ -121,7 +121,7 @@ const LessonPage = () => {
         status={progress?.status ?? 'not_started'}
       />
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         <LessonBlockSidebar
           blocks={blocks}
           currentBlockId={currentBlock.blockId}
@@ -129,17 +129,22 @@ const LessonPage = () => {
           onSelectBlock={setCurrentBlock}
         />
 
-        <LessonContentViewer
-          block={currentBlock}
-          blockIndex={currentIndex}
-          totalBlocks={blocks.length}
-          completed={completedBlockIds.includes(currentBlock.blockId)}
-          onComplete={() => { void handleCompleteBlock() }}
-          onPrev={() => setCurrentBlock(blocks[currentIndex - 1]?.blockId ?? null)}
-          onNext={() => setCurrentBlock(blocks[currentIndex + 1]?.blockId ?? null)}
-        />
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <LessonContentViewer
+            block={currentBlock}
+            blockIndex={currentIndex}
+            totalBlocks={blocks.length}
+            completed={completedBlockIds.includes(currentBlock.blockId)}
+            onComplete={() => { void handleCompleteBlock() }}
+            onPrev={() => setCurrentBlock(blocks[currentIndex - 1]?.blockId ?? null)}
+            onNext={() => setCurrentBlock(blocks[currentIndex + 1]?.blockId ?? null)}
+          />
+          <LessonTutor
+            lessonId={lessonMeta.id}
+            currentBlockId={currentBlock.blockId}
+          />
+        </div>
       </div>
-      <FloatingChat />
     </div>
   )
 }

@@ -14,7 +14,7 @@ from app.modules.lessons.schemas import (
 )
 from app.shared.exceptions import ServiceUnavailableException
 
-from .schemas import TutorLessonContext
+from .schemas import TutorLessonContext, TutorQuestionContext
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +89,32 @@ class TutorWorker:
                 "answer": response.content,
             },
         )
+
+    async def stream_question(self, context: TutorQuestionContext):
+        """Stream a stateless Lesson Tutor answer without touching sessions."""
+        user_prompt = json.dumps(
+            {
+                "question": context.user_message,
+                "goal": context.goal,
+                "lesson": context.lesson,
+                "current_block": context.current_block,
+                "block_content": context.block_content,
+                "recent_messages": [
+                    message.model_dump() for message in context.recent_messages
+                ],
+            },
+            ensure_ascii=False,
+        )
+        system_prompt = (
+            "你是一名专业学习导师。请严格结合用户当前的 Goal、Lesson 和当前 Block 回答问题。"
+            "当前课程内容优先于用户历史消息。回答要清晰、准确、适合初学者理解。"
+            "不要生成学习计划，不要修改课程内容，不要输出 JSON 或控制信息。"
+        )
+        async for chunk in self.llm.chat_stream(
+            user_prompt,
+            system_prompt=system_prompt,
+        ):
+            yield chunk
 
     @staticmethod
     def _build_question(context: GlobalAgentContext) -> str:

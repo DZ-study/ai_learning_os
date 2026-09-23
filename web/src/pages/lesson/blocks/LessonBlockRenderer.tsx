@@ -16,11 +16,13 @@ function markdownContent(content: LessonBlock['content']): string {
 
 interface LessonBlockRendererProps {
   block: LessonBlock
+  completed?: boolean
   onComplete: () => void
 }
 
 export default function LessonBlockRenderer({
   block,
+  completed = false,
   onComplete,
 }: LessonBlockRendererProps) {
   switch (block.type) {
@@ -38,7 +40,14 @@ export default function LessonBlockRenderer({
     case 'code':
       return <CodeBlock data={block.content as CodeBlockData} />
     case 'quiz':
-      return <QuizBlock data={block.content as QuizBlockData} onCorrect={onComplete} />
+      return (
+        <QuizBlock
+          key={block.blockId}
+          data={block.content as QuizBlockData}
+          completed={completed}
+          onCorrect={onComplete}
+        />
+      )
     default:
       return (
         <p className="text-sm text-muted-foreground">

@@ -15,7 +15,7 @@ import {
   useLocalRuntime,
 } from '@assistant-ui/react'
 import { MarkdownTextPrimitive } from '@assistant-ui/react-markdown'
-import { ArrowUp, Bot, Check, Maximize2, Minimize2, Sparkles } from 'lucide-react'
+import { ArrowUp, Bot, Check, Sparkles } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -106,25 +106,7 @@ function formatPlan(plan: AgentPlan): string {
     .join('\n\n')
 }
 
-interface ChatPanelProps {
-  onMinimize?: () => void
-  onMaximize?: () => void
-  onRestore?: () => void
-  isMaximized?: boolean
-  onDragStart?: (event: React.PointerEvent<HTMLElement>) => void
-  onDragMove?: (event: React.PointerEvent<HTMLElement>) => void
-  onDragEnd?: () => void
-}
-
-export default function ChatPanel({
-  onMinimize,
-  onMaximize,
-  onRestore,
-  isMaximized = false,
-  onDragStart,
-  onDragMove,
-  onDragEnd,
-}: ChatPanelProps) {
+export default function ChatPanel() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [agentSessionId, setAgentSessionId] =
     useState<number | null>(null)
@@ -178,9 +160,9 @@ export default function ChatPanel({
     setAgentSessionId(null)
     agentSessionIdRef.current = null
     setMessages([])
-      setPendingPlan(null)
-      setSessionStage('initial')
-      setSessionStatus('pending')
+    setPendingPlan(null)
+    setSessionStage('initial')
+    setSessionStatus('pending')
 
     void getAgentSession(goal.id)
       .then(({ data }) => {
@@ -217,6 +199,7 @@ export default function ChatPanel({
             type: ('message_type' in message
               ? message.message_type === 'plan'
               : message.type === 'plan') ? 'plan' : undefined,
+            // @ts-ignore
             plan: 'metadata' in message ? message.metadata?.plan : message.plan,
             id: `history-${goal.id}-${index}`,
           })),
@@ -421,10 +404,6 @@ export default function ChatPanel({
     <aside className="chat-panel flex h-full min-h-0 flex-col">
       <header
         className="flex h-[66px] shrink-0 touch-none cursor-grab select-none items-center justify-between border-b border-[#ebe8e5] px-4 active:cursor-grabbing"
-        onPointerDown={onDragStart}
-        onPointerMove={onDragMove}
-        onPointerUp={onDragEnd}
-        onPointerCancel={onDragEnd}
       >
         <div className="flex items-center gap-2.5">
           <div className="flex size-7 items-center justify-center rounded-lg bg-[#eef0ff] text-[#6d62c1]">
@@ -441,27 +420,6 @@ export default function ChatPanel({
               {t('chat.workspace_agent')}
             </div>
           </div>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            aria-label={isMaximized ? t('chat.restore') : t('chat.maximize')}
-            title={isMaximized ? t('chat.restore') : t('chat.maximize')}
-            onClick={isMaximized ? onRestore : onMaximize}
-          >
-            {isMaximized ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            aria-label={t('chat.minimize')}
-            title={t('chat.minimize')}
-            onClick={onMinimize}
-          >
-            <Minimize2 className="size-3.5" />
-          </Button>
         </div>
       </header>
 
@@ -512,30 +470,30 @@ export default function ChatPanel({
           {pendingPlan &&
             (sessionStage === 'awaiting_plan_confirmation' || sessionStage === 'awaiting_confirmation') &&
             sessionStatus !== 'completed' && sessionStatus !== 'confirmed' && (
-            <div className="shrink-0 border-t border-[#ebe8e5] bg-[#fbfaf9] px-3 py-2.5">
-              <div className="mb-2 text-[11px] leading-4 text-[#8176a8]">
-                {t('agent.plan_ready')}
+              <div className="shrink-0 border-t border-[#ebe8e5] bg-[#fbfaf9] px-3 py-2.5">
+                <div className="mb-2 text-[11px] leading-4 text-[#8176a8]">
+                  {t('agent.plan_ready')}
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="cursor-pointer"
+                    onClick={handleModifyPlan}
+                  >
+                    {t('agent.modify_plan')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="cursor-pointer"
+                    disabled={confirmingPlan}
+                    onClick={() => void handleConfirmPlan()}
+                  >
+                    {t('agent.confirm_plan')}
+                  </Button>
+                </div>
               </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="cursor-pointer"
-                  onClick={handleModifyPlan}
-                >
-                  {t('agent.modify_plan')}
-                </Button>
-                <Button
-                  size="sm"
-                  className="cursor-pointer"
-                  disabled={confirmingPlan}
-                  onClick={() => void handleConfirmPlan()}
-                >
-                  {t('agent.confirm_plan')}
-                </Button>
-              </div>
-            </div>
-          )}
+            )}
 
           <div className="shrink-0 border-t border-[#ebe8e5] bg-[#fbfaf9] p-3">
             <ComposerPrimitive.Root className="rounded-xl border border-[#e0dcda] bg-white p-2 shadow-[0_2px_8px_rgba(34,32,42,0.03)] focus-within:border-[#a99be1]">

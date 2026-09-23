@@ -1,7 +1,13 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.goals.models import GoalPlan, GoalPlanItem, LearningTask
+from app.modules.goals.models import (
+    GoalPlan,
+    GoalPlanItem,
+    LearningTask,
+    LessonBlockProgress,
+    LessonContent,
+)
 from app.modules.nodes.models import SpaceNode
 from app.modules.nodes.schemas import (
     CourseChapterResponse,
@@ -135,6 +141,50 @@ class SpaceNodeService:
                 )
             )
 
+        lesson_ids = [task.id for task in tasks]
+        contents_by_lesson: dict[int, LessonContent] = {}
+        completed_blocks_by_lesson: dict[int, set[str]] = {
+            lesson_id: set() for lesson_id in lesson_ids
+        }
+        if lesson_ids:
+            contents = await db.scalars(
+                select(LessonContent).where(LessonContent.lesson_id.in_(lesson_ids))
+            )
+            contents_by_lesson = {content.lesson_id: content for content in contents}
+
+            progress_rows = await db.scalars(
+                select(LessonBlockProgress).where(
+                    LessonBlockProgress.user_id == user_id,
+                    LessonBlockProgress.lesson_id.in_(lesson_ids),
+                    LessonBlockProgress.status == "completed",
+                )
+            )
+            for row in progress_rows:
+                completed_blocks_by_lesson.setdefault(row.lesson_id, set()).add(
+                    row.block_id
+                )
+
+        def lesson_progress(lesson_id: int) -> int:
+            content = contents_by_lesson.get(lesson_id)
+            blocks = content.blocks if content else []
+            required_block_ids = {
+                block.get("block_id")
+                for block in blocks
+                if isinstance(block, dict)
+                and block.get("block_id")
+                and block.get("required", True)
+            }
+            completed_required = len(
+                required_block_ids.intersection(
+                    completed_blocks_by_lesson.get(lesson_id, set())
+                )
+            )
+            return (
+                round(completed_required * 100 / len(required_block_ids))
+                if required_block_ids
+                else 0
+            )
+
         tasks_by_item: dict[int, list[LearningTask]] = {item.id: [] for item in items}
         for task in tasks:
             if task.plan_item_id in tasks_by_item:
@@ -152,6 +202,7 @@ class SpaceNodeService:
                             id=task.id,
                             title=task.title,
                             estimated_minutes=task.estimated_minutes,
+                            progress=lesson_progress(task.id),
                             status=(
                                 "completed"
                                 if task.status == "completed"
