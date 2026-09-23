@@ -14,7 +14,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRef } from 'react'
 import { toast } from 'sonner'
 import GoalForm, { type GoalFormRef } from "./GoalForm"
-import { goalKeys } from './queryKeys'
+import { goalKeys } from '@/query/keys'
 import { useTranslation } from 'react-i18next'
 
 export default function AddGoalDrawer({

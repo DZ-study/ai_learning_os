@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { deleteGoal } from '@/services/goal'
 import { GOAL_ICONS } from '@/utils/constants'
-import { goalKeys } from './queryKeys'
+import { goalKeys } from '@/query/keys'
 
 
 const getGoalIcon = (title: string) => {

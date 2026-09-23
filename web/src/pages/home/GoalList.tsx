@@ -1,5 +1,5 @@
 import GoalCard from '@/pages/goal/GoalCard'
-import { goalKeys } from '@/pages/goal/queryKeys'
+import { goalKeys } from '@/query/keys'
 import { getGoals } from '@/services/goal'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'

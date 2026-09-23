@@ -1,14 +1,17 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
   completeLessonBlock,
   generateLessonContent,
   getLessonContent,
+  getLessonProgress,
   startLesson,
 } from '@/services/lesson'
+import { goalKeys, lessonKeys, progressKeys, spaceNodeKeys } from '@/query/keys'
 import { useWorkspaceStore } from '@/stores/workspaceStore'
-import type { LessonBlock, LessonContent, LessonProgress } from '@/types/lesson'
+import type { LessonBlock } from '@/types/lesson'
 
 import LearningHeader from './LearningHeader'
 import LessonBlockSidebar from './LessonBlockSidebar'
@@ -16,6 +19,7 @@ import LessonContentViewer from './LessonContentViewer'
 import LessonTutor from './LessonTutor'
 
 interface LessonRouteState {
+  goalId?: number
   lesson?: {
     id: number
     title: string
@@ -28,15 +32,63 @@ const LessonPage = () => {
   const routeState = location.state as LessonRouteState | null
   const lessonMeta = routeState?.lesson
   const lessonId = lessonMeta?.id
-  const [content, setContent] = useState<LessonContent | null>(null)
-  const [progress, setProgress] = useState<LessonProgress | null>(null)
-  const [loading, setLoading] = useState(Boolean(lessonId))
-  const [error, setError] = useState<string | null>(null)
+  const goalId = routeState?.goalId
+  const queryClient = useQueryClient()
+  const contentQuery = useQuery({
+    queryKey: lessonKeys.content(lessonId ?? 0),
+    queryFn: async () => (await getLessonContent(lessonId!)).data,
+    enabled: Boolean(lessonId),
+  })
+  const progressQuery = useQuery({
+    queryKey: progressKeys.lesson(lessonId ?? 0),
+    queryFn: async () => (await getLessonProgress(lessonId!)).data,
+    enabled: Boolean(lessonId),
+  })
+  const {
+    mutate: generateContent,
+    isPending: isGeneratingContent,
+    error: generateContentError,
+  } = useMutation({
+    mutationFn: (id: number) => generateLessonContent(id),
+    onSuccess: (response, id) => {
+      queryClient.setQueryData(lessonKeys.content(id), response.data)
+    },
+  })
+  const {
+    mutate: startLessonRequest,
+    isPending: isStartingLesson,
+    error: startLessonError,
+  } = useMutation({
+    mutationFn: (id: number) => startLesson(id),
+    onSuccess: (response, id) => {
+      queryClient.setQueryData(progressKeys.lesson(id), response.data)
+    },
+  })
+  const {
+    mutate: completeBlock,
+    error: completeBlockError,
+  } = useMutation({
+    mutationFn: ({ id, blockId }: { id: number; blockId: string }) =>
+      completeLessonBlock(id, blockId),
+    onSuccess: (response, variables) => {
+      queryClient.setQueryData(progressKeys.lesson(variables.id), response.data)
+      if (goalId) {
+        void queryClient.invalidateQueries({ queryKey: goalKeys.detail(goalId) })
+        void queryClient.invalidateQueries({ queryKey: spaceNodeKeys.list(goalId) })
+      }
+    },
+  })
+  const startedLessonRef = useRef<number | null>(null)
+  const generatedLessonRef = useRef<number | null>(null)
   const currentLessonId = useWorkspaceStore((state) => state.currentLessonId)
   const currentBlockId = useWorkspaceStore((state) => state.currentBlockId)
   const setCurrentLesson = useWorkspaceStore((state) => state.setCurrentLesson)
   const setCurrentBlock = useWorkspaceStore((state) => state.setCurrentBlock)
 
+  const content = contentQuery.data && 'blocks' in contentQuery.data
+    ? contentQuery.data
+    : null
+  const progress = progressQuery.data ?? null
   const blocks = useMemo<LessonBlock[]>(
     () => (content?.blocks ?? []).map((block, index) => ({
       ...block,
@@ -46,6 +98,28 @@ const LessonPage = () => {
   )
   const currentLessonKey = lessonId ? String(lessonId) : null
   const completedBlockIds = progress?.completedBlockIds ?? []
+  const needsContentGeneration = Boolean(
+    contentQuery.data && !('blocks' in contentQuery.data),
+  )
+
+  useEffect(() => {
+    if (
+      !lessonId
+      || !contentQuery.data
+      || 'blocks' in contentQuery.data
+      || isGeneratingContent
+      || generatedLessonRef.current === lessonId
+    ) return
+
+    generatedLessonRef.current = lessonId
+    generateContent(lessonId)
+  }, [contentQuery.data, generateContent, isGeneratingContent, lessonId])
+
+  useEffect(() => {
+    if (!lessonId || startedLessonRef.current === lessonId) return
+    startedLessonRef.current = lessonId
+    startLessonRequest(lessonId)
+  }, [lessonId, startLessonRequest])
 
   useEffect(() => {
     if (!currentLessonKey) return
@@ -57,34 +131,6 @@ const LessonPage = () => {
     }
   }, [currentBlockId, currentLessonId, currentLessonKey, blocks, setCurrentLesson, setCurrentBlock])
 
-  useEffect(() => {
-    let cancelled = false
-    if (!lessonId) {
-      return () => { cancelled = true }
-    }
-
-    void getLessonContent(lessonId)
-      .then(async ({ data }) => {
-        if (cancelled) return
-        const lessonContent = 'blocks' in data
-          ? data
-          : (await generateLessonContent(lessonId)).data
-        const lessonProgress = await startLesson(lessonId)
-        if (!cancelled) {
-          setContent(lessonContent)
-          setProgress(lessonProgress.data)
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setError('学习内容加载失败，请稍后重试')
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-
-    return () => { cancelled = true }
-  }, [lessonId])
-
   const currentIndex = Math.max(
     0,
     blocks.findIndex((block) => block.blockId === currentBlockId),
@@ -93,20 +139,27 @@ const LessonPage = () => {
 
   const handleCompleteBlock = async () => {
     if (!lessonId || !currentBlock) return
-    try {
-      const { data } = await completeLessonBlock(lessonId, currentBlock.blockId)
-      setProgress(data)
-    } catch {
-      setError('学习进度保存失败，请稍后重试')
-    }
+    completeBlock({ id: lessonId, blockId: currentBlock.blockId })
   }
 
-  if (loading) {
+  const isLoading = contentQuery.isLoading || progressQuery.isLoading
+    || isGeneratingContent
+    || isStartingLesson
+    || (needsContentGeneration && !generateContentError)
+  const requestError = contentQuery.error || progressQuery.error
+    || generateContentError || startLessonError || completeBlockError
+  const errorMessage = requestError instanceof Error
+    ? requestError.message
+    : requestError
+      ? '学习内容加载失败，请稍后重试'
+      : null
+
+  if (isLoading) {
     return <div className="flex h-screen items-center justify-center text-sm text-muted-foreground">正在准备学习内容…</div>
   }
 
-  if (error || !content || !currentBlock || !lessonMeta) {
-    return <div className="flex h-screen items-center justify-center text-sm text-destructive">{error ?? (lessonMeta ? '暂无学习内容' : '未找到要学习的 Lesson')}</div>
+  if (errorMessage || !content || !currentBlock || !lessonMeta) {
+    return <div className="flex h-screen items-center justify-center text-sm text-destructive">{errorMessage ?? (lessonMeta ? '暂无学习内容' : '未找到要学习的 Lesson')}</div>
   }
 
   return (

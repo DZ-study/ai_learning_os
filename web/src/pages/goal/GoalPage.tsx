@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom"
 import GeneratePlanDrawer from './GeneratePlanDrawer'
 import GoalCard from './GoalCard'
 import GoalTable from './GoalTable'
-import { goalKeys } from './queryKeys'
+import { goalKeys } from '@/query/keys'
 import type { ViewMode } from './ViewSwitcher'
 import { ViewSwitcher } from './ViewSwitcher'
 

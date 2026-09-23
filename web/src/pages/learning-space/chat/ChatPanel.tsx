@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button'
-import { confirmPlan, getAgentSession, getSpaceNodes } from '@/services/goal'
+import { confirmPlan, getAgentSession } from '@/services/goal'
+import { goalKeys, spaceNodeKeys } from '@/query/keys'
+import { useQueryClient } from '@tanstack/react-query'
 import { useGoalStore } from '@/stores/goalStore'
-import { useWorkspaceStore } from '@/stores/workspaceStore'
 import { streamSSE } from '@/utils/sse-client'
 import type {
   ChatModelAdapter,
@@ -130,7 +131,7 @@ export default function ChatPanel() {
       : undefined
 
   const goal = useGoalStore((state) => state.currentGoal)
-  const loadNodes = useWorkspaceStore((state) => state.loadNodes)
+  const queryClient = useQueryClient()
 
   const { t } = useTranslation()
 
@@ -327,8 +328,9 @@ export default function ChatPanel() {
     setConfirmingPlan(true)
     try {
       const { data: confirmation } = await confirmPlan(goal.id, pendingPlan.sessionId)
-      const { data } = await getSpaceNodes(goal.id)
-      loadNodes(data)
+      void queryClient.invalidateQueries({ queryKey: goalKeys.detail(goal.id) })
+      void queryClient.invalidateQueries({ queryKey: goalKeys.list() })
+      void queryClient.invalidateQueries({ queryKey: spaceNodeKeys.list(goal.id) })
       setPendingPlan(null)
       setSessionStage(confirmation.stage)
       setSessionStatus(confirmation.status)

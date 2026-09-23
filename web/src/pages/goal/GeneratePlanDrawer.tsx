@@ -9,12 +9,12 @@ import {
   DrawerTitle
 } from "@/components/ui/drawer"
 import { confirmPlan } from '@/services/goal'
+import { goalKeys, spaceNodeKeys } from '@/query/keys'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import GoalAgentSession, { type TPlan } from './GoalAgentSession'
-import { goalKeys } from './queryKeys'
 import { useTranslation } from 'react-i18next'
 
 export default function GeneratePlanDrawer({
@@ -36,12 +36,12 @@ export default function GeneratePlanDrawer({
   } = useMutation({
     mutationFn: ({ goalId, sessionId }: { goalId: number, sessionId: number }) =>
       confirmPlan(goalId, sessionId),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       toast.success(t("goal.plan_generated"))
       onOpenChange(false)
-      queryClient.invalidateQueries({ // Update goal status
-        queryKey: goalKeys.list()
-      })
+      void queryClient.invalidateQueries({ queryKey: goalKeys.list() })
+      void queryClient.invalidateQueries({ queryKey: goalKeys.detail(variables.goalId) })
+      void queryClient.invalidateQueries({ queryKey: spaceNodeKeys.list(variables.goalId) })
     },
     onError: (error) => {
       toast.error(t("goal.plan_failed"))

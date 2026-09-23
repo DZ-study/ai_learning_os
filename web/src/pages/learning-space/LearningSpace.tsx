@@ -5,12 +5,15 @@ import {
   Separator,
 } from 'react-resizable-panels'
 import { createSpaceNode, getSpaceNodes } from '@/services/goal'
+import { spaceNodeKeys } from '@/query/keys'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useChatStore } from '@/stores/chatStore'
 import { useGoalStore } from '@/stores/goalStore'
 import { useWorkspaceStore } from '@/stores/workspaceStore'
 import { getNextAvailablePosition } from '@/utils/workspace-position'
 import { useCallback, useEffect } from 'react'
 import type { CanvasView } from '@/stores/workspaceStore'
+import type { SpaceNode } from '@/types/workspace'
 
 import LearningCanvas from './canvas/LearningCanvas'
 import ChatPanel from './chat/ChatPanel'
@@ -25,7 +28,6 @@ interface LearningSpaceProps {
 
 export default function LearningSpace({ initialView = 'workspace' }: LearningSpaceProps) {
   const loadNodes = useWorkspaceStore((state) => state.loadNodes)
-  const upsertNode = useWorkspaceStore((state) => state.upsertNode)
   const openCourseDetail = useWorkspaceStore((state) => state.openCourseDetail)
   const items = useWorkspaceStore((state) => state.items)
   const goal = useGoalStore((state) => state.currentGoal)
@@ -33,17 +35,33 @@ export default function LearningSpace({ initialView = 'workspace' }: LearningSpa
   const chatMode = useChatStore((state) => state.mode)
   const setChatOpen = useChatStore((state) => state.setOpen)
   const setChatMode = useChatStore((state) => state.setMode)
+  const queryClient = useQueryClient()
+  const { data: nodes } = useQuery({
+    queryKey: spaceNodeKeys.list(goal?.id ?? 0),
+    queryFn: async () => (await getSpaceNodes(goal!.id)).data,
+    enabled: Boolean(goal?.id),
+  })
+  const { mutate: createNote } = useMutation({
+    mutationFn: ({ goalId, position }: { goalId: number; position: { x: number; y: number } }) =>
+      createSpaceNode(goalId, {
+        type: 'note',
+        title: 'workspace.new_note',
+        content: { content: '', color: 'yellow' },
+        position,
+      }),
+    onSuccess: ({ data }, variables) => {
+      queryClient.setQueryData<SpaceNode[]>(
+        spaceNodeKeys.list(variables.goalId),
+        (current = []) => [...current, data],
+      )
+    },
+  })
 
   const addNote = useCallback(() => {
     if (!goal?.id) return
     const position = getNextAvailablePosition(items)
-    void createSpaceNode(goal.id, {
-      type: 'note',
-      title: 'workspace.new_note',
-      content: { content: '', color: 'yellow' },
-      position,
-    }).then(({ data }) => upsertNode(data))
-  }, [goal?.id, items, upsertNode])
+    createNote({ goalId: goal.id, position })
+  }, [createNote, goal?.id, items])
 
   const handleMinimizeChat = useCallback(() => {
     setChatOpen(false)
@@ -51,22 +69,19 @@ export default function LearningSpace({ initialView = 'workspace' }: LearningSpa
   }, [setChatMode, setChatOpen])
 
   useEffect(() => {
-    let cancelled = false
     if (!goal?.id) {
       loadNodes([])
-      return () => { cancelled = true }
+      return
     }
-    void getSpaceNodes(goal.id).then(({ data }) => {
-      if (cancelled) return
 
-      loadNodes(data)
-      if (initialView === 'course_detail') {
-        const firstCourse = data.find((node) => node.type === 'course')
-        if (firstCourse) openCourseDetail(String(firstCourse.id))
-      }
-    })
-    return () => { cancelled = true }
-  }, [goal?.id, initialView, loadNodes, openCourseDetail])
+    if (!nodes) return
+
+    loadNodes(nodes)
+    if (initialView === 'course_detail') {
+      const firstCourse = nodes.find((node) => node.type === 'course')
+      if (firstCourse) openCourseDetail(String(firstCourse.id))
+    }
+  }, [goal?.id, initialView, loadNodes, nodes, openCourseDetail])
 
   return (
     <div className="flex h-full min-h-0 w-full overflow-hidden bg-[#fbfaf9]">

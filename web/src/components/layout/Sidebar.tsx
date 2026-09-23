@@ -14,7 +14,7 @@ import {
   SidebarRail,
   useSidebar
 } from "@/components/ui/sidebar"
-import { goalKeys } from "@/pages/goal/queryKeys"
+import { goalKeys } from "@/query/keys"
 import { getGoals } from "@/services/goal"
 import { useGoalStore } from '@/stores/goalStore'
 import type { Goal } from '@/types/goal'
