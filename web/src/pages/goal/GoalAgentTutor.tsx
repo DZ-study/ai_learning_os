@@ -50,6 +50,7 @@ export default function GoalAgent() {
   const [agent, setAgent] = useState<Agent | null>(null)
   const [sessionId, setSessionId] = useState<number | null>(null)
 
+  const { t } = useTranslation()
   /*
    * assistant-ui Adapter
    *

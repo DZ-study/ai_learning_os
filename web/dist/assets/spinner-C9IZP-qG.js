@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-CBUMh5-l.js";import{c as t,m as n}from"./react-ENfcyaZK.js";var r=e();function i({className:e,...i}){return(0,r.jsx)(t,{"data-slot":`spinner`,role:`status`,"aria-label":`Loading`,className:n(`size-4 animate-spin`,e),...i})}export{i as t};

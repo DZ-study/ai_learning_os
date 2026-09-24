@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { useWorkspaceStore } from '@/stores/workspaceStore'
-import { Grid2X2, Minus, Plus, Settings2, Trash2 } from 'lucide-react'
+import { Minus, Plus, Settings2, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 interface FloatingToolbarProps {
@@ -16,7 +16,7 @@ export default function FloatingToolbar({ onAddNote }: FloatingToolbarProps) {
 
   return (
     <div className="workspace-toolbar">
-      <Button variant="ghost" size="icon-sm" title={t("workspace.grid_view")} aria-label={t("workspace.grid_view")} className="text-[#79757b]"><Grid2X2 className="size-4" /></Button>
+      {/* <Button variant="ghost" size="icon-sm" title={t("workspace.grid_view")} aria-label={t("workspace.grid_view")} className="text-[#79757b]"><Grid2X2 className="size-4" /></Button> */}
       <Button variant="ghost" size="icon-sm" onClick={() => setZoom(zoom - 5)} title={t("workspace.zoom_out")} aria-label={t("workspace.zoom_out")} className="text-[#79757b]"><Minus className="size-4" /></Button>
       <span className="min-w-[42px] text-center text-xs text-[#77747a]">{zoom}%</span>
       <Button variant="ghost" size="icon-sm" onClick={() => setZoom(zoom + 5)} title={t("workspace.zoom_in")} aria-label={t("workspace.zoom_in")} className="text-[#79757b]"><Plus className="size-4" /></Button>

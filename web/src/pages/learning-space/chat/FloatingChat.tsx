@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button'
 import { useChatStore } from '@/stores/chatStore'
 import { Bot, MessageCircle } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import ChatPanel from './ChatPanel'
 
@@ -75,15 +75,7 @@ export default function FloatingChat({ docked = false, onMinimize }: FloatingCha
         aria-hidden={!isOpen}
         inert={!isOpen ? true : undefined}
       >
-        <ChatPanel
-          onMinimize={onMinimize ?? (() => setOpen(false))}
-          onMaximize={() => setMode('drawer')}
-          onRestore={() => setMode('popup')}
-          isMaximized={mode === 'drawer'}
-          onDragStart={handleDragStart}
-          onDragMove={handleDragMove}
-          onDragEnd={handleDragEnd}
-        />
+        <ChatPanel />
       </div>}
 
       <Button

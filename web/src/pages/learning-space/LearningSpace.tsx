@@ -1,19 +1,19 @@
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { spaceNodeKeys } from '@/query/keys'
+import { createSpaceNode, getSpaceNodes } from '@/services/goal'
+import { useChatStore } from '@/stores/chatStore'
+import { useGoalStore } from '@/stores/goalStore'
+import type { CanvasView } from '@/stores/workspaceStore'
+import { useWorkspaceStore } from '@/stores/workspaceStore'
+import type { SpaceNode } from '@/types/workspace'
+import { getNextAvailablePosition } from '@/utils/workspace-position'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useCallback, useEffect } from 'react'
 import {
   Group,
   Panel,
   Separator,
 } from 'react-resizable-panels'
-import { createSpaceNode, getSpaceNodes } from '@/services/goal'
-import { spaceNodeKeys } from '@/query/keys'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useChatStore } from '@/stores/chatStore'
-import { useGoalStore } from '@/stores/goalStore'
-import { useWorkspaceStore } from '@/stores/workspaceStore'
-import { getNextAvailablePosition } from '@/utils/workspace-position'
-import { useCallback, useEffect } from 'react'
-import type { CanvasView } from '@/stores/workspaceStore'
-import type { SpaceNode } from '@/types/workspace'
 
 import LearningCanvas from './canvas/LearningCanvas'
 import ChatPanel from './chat/ChatPanel'
@@ -119,11 +119,7 @@ export default function LearningSpace({ initialView = 'workspace' }: LearningSpa
                 maxSize="45%"
                 className="min-w-0"
               >
-                <ChatPanel
-                  onMinimize={handleMinimizeChat}
-                  onMaximize={() => setChatMode('drawer')}
-                  isMaximized={false}
-                />
+                <ChatPanel />
               </Panel>}
             </Group>
 

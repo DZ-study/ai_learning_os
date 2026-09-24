@@ -52,7 +52,7 @@ export default function GoalTable({
                     {t("common.start")}
                   </Button>} */}
                   {goal.plan && goal.status === "draft" && <Button variant="default">{t("goal.regenerate_plan")}</Button>}
-                  {goal.status === "draft" && !goal.plan && <Button onClick={() => onGenerate(goal.id)}>{t("goal.generate_plan")}</Button>}
+                  {/* {goal.status === "draft" && !goal.plan && <Button onClick={() => onGenerate(goal.id)}>{t("goal.generate_plan")}</Button>} */}
                 </TableCell>
               </TableRow>
             )

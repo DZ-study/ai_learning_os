@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-CBUMh5-l.js";var t=e();function n(){return(0,t.jsxs)(`div`,{children:[(0,t.jsx)(`h1`,{className:`text-2xl font-bold mb-4`,children:`AI Tutor`}),(0,t.jsx)(`p`,{className:`text-muted-foreground`,children:`Ask the AI tutor questions about your learning materials.`})]})}export{n as default};
