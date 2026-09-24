@@ -6,7 +6,7 @@ __pycache__/
 *.pyo
 *.egg-info/
 *.egg
-dist/
+# dist/
 build/
 *.whl
 .venv/
@@ -20,7 +20,6 @@ venv/
 # Node.js / Frontend
 # ===================
 node_modules/
-dist/
 *.tsbuildinfo
 
 # ===================
